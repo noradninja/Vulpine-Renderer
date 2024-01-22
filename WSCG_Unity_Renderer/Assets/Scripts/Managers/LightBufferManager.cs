@@ -32,17 +32,16 @@ namespace WSCG
 		 
 		void Start() //grab all our light data for passing to the structured buffer
 		{
+			
 			//XYZ light positions for four lights, packed by axis 
 			lightPosX = new Vector4(lights[0].transform.position.x,
 				                  lights[1].transform.position.x,
 				                  lights[2].transform.position.x,
 				                  lights[3].transform.position.x);
-			
 			lightPosY = new Vector4(lights[0].transform.position.y,
 									  lights[1].transform.position.y,
 								    lights[2].transform.position.y,
 									lights[3].transform.position.y);
-			
 			lightPosZ = new Vector4(lights[0].transform.position.z,
 									lights[1].transform.position.z,
 									  lights[2].transform.position.z,
@@ -52,17 +51,15 @@ namespace WSCG
 								   lights[1].range,
 								   lights[2].range,
 								  lights[3].range);
-			//XYZ light colors for four lights, packed by channel 
+			//RGB light colors for four lights, packed by channel 
 			lightColorR	 = new Vector4(lights[0].color.r,
 									   lights[1].color.r,
 									   lights[2].color.r,
 									   lights[3].color.r);
-			
 			lightColorG = new Vector4(lights[0].color.g,
 									  lights[1].color.g,
 									  lights[2].color.g,
 									  lights[3].color.g);
-			
 			lightColorB = new Vector4(lights[0].color.b,
 									  lights[1].color.b,
 									  lights[2].color.b,
@@ -76,11 +73,11 @@ namespace WSCG
 			lightingDataBuffer = new ComputeBuffer(maxLights, LightingData.GetSize());
 		}
 		// Update is called once per frame
-		void Update() //here is where we will set up our command buffers for passing the above data to our shader
+		void Update() 
 		{
-			
-			// ReSharper disable once RedundantJumpStatement
-			return;
+			LightingData[] lightData;
+			lightData = new LightingData[0];
+			lightingDataBuffer.SetData(lightData);
 		}
 
 		public struct LightingData
@@ -98,9 +95,11 @@ namespace WSCG
 			public Vector4 lightColorB;
 			//we are packing intensity for four lights in w for our shader to use, so we store it here to pass along
 			public Vector4 lightColorA;
+			
 			public static int GetSize()
 			{
-				return sizeof(Vector4) * 8;
+				//we return float size because Vector4 size isn't safe, so 4 floats * 8 Vectors
+				return sizeof(float) * 4 * 8;
 			}
 		}
 		
