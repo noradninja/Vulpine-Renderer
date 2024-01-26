@@ -6,11 +6,12 @@ namespace WSCG
     public class LightBufferManager : MonoBehaviour
     {
         //set max light count onscreen, create array to hold lights
-        //lights will add themselves to the array, based on if the bounds of their range falls within the screen,
-        //see LightManager.cs
+        //lights will add themselves to the array, based on if the bounds of their range falls within the screen, see LightManager.cs
 
-        public static int MaxLights = 4;
-        public static Vector4 usedSlots = Vector4.zero;
+        public static readonly int MaxLights = 4;
+        public static Vector4 UsedSlots = Vector4.zero;
+        public static Vector4 ScreenSpaceLightDistances = Vector4.zero;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Global
         public static Light[] Lights = new Light[MaxLights];
         
         //vectors to pack position for four lights 
