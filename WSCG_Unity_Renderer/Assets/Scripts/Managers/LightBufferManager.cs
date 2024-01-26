@@ -89,15 +89,20 @@ namespace WSCG
                 Lights[2].intensity,
                 Lights[3].intensity
             );
-
+            
+            _lightData = new LightingData[0];
+            ///DO I NEED TO PASS THE DATA FROM THE ABOVE VECTOR4'S (WHOSE COMPONENT VALUES ARE DYNAMICALLY ASSIGNED BASED ON WHICH LIGHTS YOU ARE NEAR UP TO MAXLIGHTS) INTO THE EQUIVALENT VALUES IN THE LightingData[] STRUCT TO COPY THEM THERE?
+            /// ASUMING I DO, WHAT'S THE IDEAL METHOD OF DOING THIS?
+            /// IF I SET THE ABOVE new LightingData[] TO SIZE 0, I GET ONE COPY OF THE STRUCT, YES? IF I SET IT TO SIZE n, DOES IT RETURN n STRUCT'S, EACH CONTAINING UNIQUE INSTANCES OF THE VECTOR4'S THEY CONTAIN? IN EFFECT, AN ARRAY OF STRUCTS?
+            /// 
+            _lightingDataBuffer.SetData(_lightData);
             _lightingDataBuffer = new ComputeBuffer(MaxLights, LightingData.GetSize());
         }
 
         // Update is called once per frame
         private void Update()
         {
-            _lightData = new LightingData[1];
-            _lightingDataBuffer.SetData(_lightData);
+    
         }
 
         private struct LightingData
@@ -115,7 +120,7 @@ namespace WSCG
             public Vector4 LightColorB;
             //we are packing intensity for four lights in w
             public Vector4 LightColorA;
-
+            
             //we return sizeof(float) because sizeof(Vector4) is unsafe. 4 floats * 8 Vectors = 32 floats * 4 bytes/float = 128 bytes/frame
             public static int GetSize()
             {
