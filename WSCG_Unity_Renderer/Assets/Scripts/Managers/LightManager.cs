@@ -48,25 +48,25 @@ namespace WSCG
 
 		private void CheckCameraView(Light lightToCheck)
 		{
-			//grab our bounds and center, extract radius from bounds
-			_lightBounds = lightToCheck.GetComponent<Renderer>().bounds;
-			_lightCenter = _lightBounds.center;
-			_lightRadius = _lightBounds.extents.magnitude;
+			//grab our radius and center, extract radius from bounds
+			_lightCenter = lightToCheck.transform.position;
+			_lightRadius = lightToCheck.range;
 			//get a point from the camera to the viewport center to check against, get distance to the light's center point
 			_cameraViewportPoint = _mainCam.ViewportToWorldPoint( new Vector3(0.5f, 0.5f, _mainCam.nearClipPlane) );
 			//find the distance from the light center to the camera center
 			_distanceToCamera = Vector3.Distance(_lightCenter, _cameraViewportPoint);
 			
-			//check if camera distance is within light radius, toggle bool
+			//check if camera distance is within light radius
 			if (_distanceToCamera <= _lightRadius)
 			{
-				_isInCamera = true;
+				_isInCamera = true; //
 				AddLight(lightToCheck, _distanceToCamera);
 			}
 			else
 			{
 				_isInCamera = false;
-				RemoveLight(_thisLightSlot);
+				if (_isInBuffer)
+					RemoveLight(_thisLightSlot);
 			}
 		}
 		
@@ -87,16 +87,17 @@ namespace WSCG
 							LightBufferManager.Lights[_thisLightSlot] = _lightObject; //add this light to object array
 							LightBufferManager.ScreenSpaceLightDistances[_thisLightSlot] = distance; //store ss distance in array
 							_usedSlots[_thisLightSlot] = 1; //set the Vec4 component to 1 so it is 'used'
+							LightBufferManager.listIsDirty = true; //flag light list data for refresh
 							Debug.Log(_lightObject.name + " added to buffer in slot " + _thisLightSlot);
 							Debug.Log("Available slots: " + _usedSlots.ToString());
 						}
 					}
 				}
-				else
+				else 
 				{
 					Debug.Log("All slots are occupied: " + _usedSlots.ToString());
-					float currentMax = Math.Vec4CompMax(LightBufferManager.ScreenSpaceLightDistances); // find light with longest distance
-					int lightToRemove = 1; //LightBufferManager.ScreenSpaceLightDistances.Max; //get index 
+					int currentMax = MathLib.Vec4CompMaxInt(LightBufferManager.ScreenSpaceLightDistances); // find light with longest distance
+					int lightToRemove = MathLib.Vec4MaxComponent(LightBufferManager.ScreenSpaceLightDistances); //get index 
 					if (distance < currentMax) //are we closer than the light in this slot
 					{
 						RemoveLight(lightToRemove); //remove light at that index
@@ -104,6 +105,7 @@ namespace WSCG
 						LightBufferManager.Lights[lightToRemove] = lightToAdd; //swap this light in object array
 						LightBufferManager.ScreenSpaceLightDistances[lightToRemove] = distance; //store ss distance in array
 						_usedSlots[_thisLightSlot] = 1; //set the Vec4 component to 1 so it is 'used'
+						LightBufferManager.listIsDirty = true; //flag light list data for refresh
 						
 					}
 					else
