@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.SocialPlatforms;
 
 namespace WSCG.Managers
 {
@@ -14,86 +15,122 @@ namespace WSCG.Managers
         public static Vector4 ScreenSpaceLightDistances = Vector4.zero;
         // ReSharper disable once FieldCanBeMadeReadOnly.Global
         public static Light[] Lights;
-        [SerializeField] private Light[] _lights;
+        public static float visibilityBuffer; //value for camera buffer scale
+        [Range(0.0f,1.0f)] public float frustumOverscan;
+        public Light[] lights;//for debug 
         [Header("Light Position")]
         //vectors to pack position for four lights 
-        public Vector4 lightPosX;
-        public Vector4 lightPosY;
-        public Vector4 lightPosZ;
+        public static Vector4 lightPosX;
+        public static Vector4 lightPosY;
+        public static Vector4 lightPosZ;
         [Header("Light Color")]
         //vectors to pack rgb color values for four lights
-        public Vector4 lightColorR;
-        public Vector4 lightColorG;
-        public Vector4 lightColorB;
+        public static Vector4 lightColorR;
+        public static Vector4 lightColorG;
+        public static Vector4 lightColorB;
         [Header("Light Properties")]
         //we are packing intensity for four lights in w 
-        public Vector4 lightIntensityA;
+        public static Vector4 lightIntensityA;
         //we are packing range for four lights in w 
-        public Vector4 lightRangeW;
+        public static Vector4 lightRangeW;
         //Lighting data structure
-        public LightingData[] LightData;
+        public static LightingData[] LightData;
         
     
-        public static bool ListIsDirty = true;
-        public int _lightDataSetLength;
-        public static int _totalLights;
-        public bool dirtyFlag = ListIsDirty;
+        public static bool listIsDirty;
+        public int lightDataSetLength;
+        public static int TotalLights;
+        private static ComputeBuffer _lightingDataBuffer;
 
-        public bool[] usedSlot = UsedSlots;
-        //GPU data buffer
-        private ComputeBuffer _lightingDataBuffer;
+    //light
+        public Light lightObject;
 
+        
+        private Vector3 _lightCenter;
+        private float _lightRadius;
+        private static bool _isInBuffer; 
+   
+		public struct LightingData
+        {
+	        //vectors to pack position for four lights
+	        public Vector4 LightPosX;
+	        public Vector4 LightPosY;
+
+	        public Vector4 LightPosZ;
+
+	        //we are packing range for four lights in w
+	        public Vector4 LightRangeW;
+
+	        //vectors to pack rgb color values for four lights
+	        public Vector4 LightColorR;
+	        public Vector4 LightColorG;
+
+	        public Vector4 LightColorB;
+
+	        //we are packing intensity for four lights in w
+	        public Vector4 LightIntensityA;
+
+	        //we return sizeof(float) because sizeof(Vector4) is unsafe. 4 floats * 8 Vectors = 32 floats * 4 bytes/float = 128 bytes/frame
+	        public static int GetSize()
+	        {
+		        return sizeof(float) * 4 * 8;
+	        }
+        }
+		
         private void Start()
         {
             //set up all our light data for passing to the GPU structured buffer
-            _lightDataSetLength = MaxLights / 4;
-            _totalLights = MaxLights * _lightDataSetLength;
-            UsedSlots = new bool[_totalLights];
-            Lights = new Light[_totalLights]; 
-            _lights = new Light[_totalLights];
-            LightData = new LightingData[_lightDataSetLength];
-            if (ListIsDirty)
-                PackLightingData(LightData, _lightDataSetLength-1);
-            
-            _lightingDataBuffer = new ComputeBuffer(_lightDataSetLength, LightingData.GetSize());
-            _lightingDataBuffer.SetData(LightData); 
+            lightDataSetLength = MaxLights / 4;
+            TotalLights = MaxLights * lightDataSetLength;
+            UsedSlots = new bool[TotalLights];
+            Lights = new Light[TotalLights]; 
+            lights = new Light[TotalLights];
+            LightData = new LightingData[lightDataSetLength];
+            //_lightingDataBuffer = new ComputeBuffer(lightDataSetLength, LightingData.GetSize());
         }
-        
+
+     
         // Update is called once per frame
         private void Update()
         {
-            // //if a flag is removed, added, or changed
-            // if (ListIsDirty)
-            //     PackLightingData(LightData, _lightDataSetLength-1);
+	        visibilityBuffer = frustumOverscan;
+	        lights = Lights;
         }
-        
-        public struct LightingData
-        {
-            //vectors to pack position for four lights
-            public Vector4 LightPosX;
-            public Vector4 LightPosY;
-            public Vector4 LightPosZ;
-            //we are packing range for four lights in w
-            public Vector4 LightRangeW;
 
-            //vectors to pack rgb color values for four lights
-            public Vector4 LightColorR;
-            public Vector4 LightColorG;
-            public Vector4 LightColorB;
-            //we are packing intensity for four lights in w
-            public Vector4 LightIntensityA;
-            
-            //we return sizeof(float) because sizeof(Vector4) is unsafe. 4 floats * 8 Vectors = 32 floats * 4 bytes/float = 128 bytes/frame
-            public static int GetSize()
-            {
-                return sizeof(float) * 4 * 8;
-            }
+
+        public static void CheckCameraView(Light lightToCheck, Camera camToCheck)
+        {
+	        _isInBuffer = new bool();
+	        _isInBuffer = lightToCheck.GetComponent<LightCluster>()._isInBuffer;
+	        int lightIndex = lightToCheck.GetComponent<LightCluster>().indexValue;
+	        float lightRange = lightToCheck.range;
+	        Transform lightTransform = lightToCheck.transform;
+	        Vector3 lightPos = lightTransform.position;
+	        Vector3 lightDirection = lightTransform.forward;
+	        Vector3 lightArea = lightPos + lightDirection * lightRange;
+	        Bounds lightBounds = new Bounds(lightPos, lightArea);
+	        lightBounds.Expand(visibilityBuffer);
+
+	        // Check if the expanded light bounds intersect with the camera's frustum
+	        if (GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(camToCheck), lightBounds))
+	        {
+		        // Light is visible or partially visible, do something
+		        Debug.Log("Light is visible or partially visible");
+		        if (!_isInBuffer && lightIndex == 9)
+			        AddLight(lightToCheck);
+	        }
+	        else
+	        {
+		        // Light is not visible, do something else
+		        Debug.Log("Light is just outside the view frustum");
+		        if (_isInBuffer && lightIndex != 9)
+			        RemoveLight(lightToCheck, lightIndex);
+	        }
         }
         
-        public void PackLightingData(LightingData[] lightingDataStruct, int lightingDataStructCount)
+        private static void PackLightingData(LightingData[] lightingDataStruct, int lightingDataStructCount)
         {
-            dirtyFlag = ListIsDirty;
-            //XYZ light positions for four lights, packed by axis 
+	        //XYZ light positions for four lights, packed by axis 
             lightPosX = new Vector4(
                 Lights[0].transform.position.x,
                 Lights[1].transform.position.x,
@@ -136,7 +173,8 @@ namespace WSCG.Managers
             );
              lightingDataStruct[lightingDataStructCount].LightColorR = lightColorR;
             
-            lightColorG = new Vector4(Lights[0].color.g,
+            lightColorG = new Vector4(
+                Lights[0].color.g,
                 Lights[1].color.g,
                 Lights[2].color.g,
                 Lights[3].color.g
@@ -159,9 +197,50 @@ namespace WSCG.Managers
                 Lights[3].intensity
             );
              lightingDataStruct[lightingDataStructCount].LightIntensityA = lightIntensityA;
-             _lights = Lights;
-             ListIsDirty = false;
-             dirtyFlag = ListIsDirty;
+             listIsDirty = false;
+             _lightingDataBuffer.SetData(LightData); 
         }
+
+        private static void AddLight(Light lightToAdd)
+		{
+		
+			_isInBuffer = new bool();
+			_isInBuffer = lightToAdd.GetComponent<LightCluster>()._isInBuffer;
+			
+			if (_isInBuffer)
+				Debug.Log(lightToAdd.name + " is already in buffer.");
+			else
+			{
+				// 	CompareDistancesForCulling(lightToAdd, distance); //if there isn't an empty spot is a light further away than this?
+				for (int l = 0; l < TotalLights; l++) //spin slot array
+				{
+					if (UsedSlots[l] == false)
+					{
+						//the spot is empty
+						lightToAdd.GetComponent<LightCluster>()._isInBuffer = true; //toggle the boolean
+						UsedSlots[l] = true; //set our slot to used
+						Lights[l] = lightToAdd; //add this light to object array
+						lightToAdd.GetComponent<LightCluster>().indexValue = l;
+						listIsDirty = true; //flag light list data for refresh
+						Debug.Log(lightToAdd.name + " added to buffer in slot " + l);
+						Debug.Log("Available slots: " + UsedSlots);
+						lightToAdd.intensity = 25; //DEBUG: turn light on to see we added this
+						break; //escape out as we have been added to the list
+					}
+					//PackLightingData(LightData, TotalLights);
+				}
+			}
+		}
+
+        private static void RemoveLight(Light lightToRemove, int lightIndex)
+		{
+			_isInBuffer = false; //toggle the boolean
+			UsedSlots[lightIndex] = false; //set the bool component to 0 so it is 'available'
+			lightToRemove.GetComponent<LightCluster>()._isInBuffer = false;
+			lightToRemove.GetComponent<LightCluster>().indexValue = 9;
+			Debug.Log(lightToRemove.name + " removed from buffer " + lightIndex);
+			Debug.Log("Available slots: " + UsedSlots);
+			Lights[lightIndex] = null; //remove this light from object list
+		}
     }
 }

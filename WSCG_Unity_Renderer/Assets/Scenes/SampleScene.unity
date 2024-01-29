@@ -33,7 +33,7 @@ RenderSettings:
   m_HaloTexture: {fileID: 0}
   m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
   m_DefaultReflectionMode: 0
-  m_DefaultReflectionResolution: 128
+  m_DefaultReflectionResolution: 512
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
@@ -140,7 +140,7 @@ Light:
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 1, g: 0.4166667, b: 0, a: 1}
-  m_Intensity: 50
+  m_Intensity: 0
   m_Range: 0.5
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -178,7 +178,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &41810147
 MonoBehaviour:
@@ -191,6 +191,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isInBuffer: 0
+  _isInCamera: 0
+  tick: 0
+  updateTick: 0
+  lightObject: {fileID: 41810145}
+  camObject: {fileID: 534669904}
 --- !u!1 &116952894
 GameObject:
   m_ObjectHideFlags: 0
@@ -218,7 +224,7 @@ Light:
   serializedVersion: 8
   m_Type: 0
   m_Color: {r: 0, g: 0.46226418, b: 0, a: 1}
-  m_Intensity: 10.41
+  m_Intensity: 0
   m_Range: 7.08
   m_SpotAngle: 73
   m_CookieSize: 10
@@ -256,7 +262,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 141.387, y: 89.99999, z: 89.99999}
 --- !u!114 &116952897
 MonoBehaviour:
@@ -269,6 +275,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isInBuffer: 0
+  _isInCamera: 0
+  tick: 0
+  updateTick: 0
+  lightObject: {fileID: 116952895}
+  camObject: {fileID: 534669904}
 --- !u!1 &170076733
 GameObject:
   m_ObjectHideFlags: 0
@@ -361,7 +373,7 @@ SphereCollider:
   m_GameObject: {fileID: 196247469}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
@@ -418,7 +430,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &439001887
 GameObject:
@@ -447,7 +459,7 @@ Light:
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 1, g: 0, b: 0, a: 1}
-  m_Intensity: 57.4
+  m_Intensity: 0
   m_Range: 0.5
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -485,7 +497,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &439001890
 MonoBehaviour:
@@ -498,6 +510,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isInBuffer: 0
+  _isInCamera: 0
+  tick: 0
+  updateTick: 0
+  lightObject: {fileID: 439001888}
+  camObject: {fileID: 534669904}
 --- !u!1 &534669902
 GameObject:
   m_ObjectHideFlags: 0
@@ -557,7 +575,7 @@ Camera:
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
-  m_AllowMSAA: 1
+  m_AllowMSAA: 0
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
@@ -587,62 +605,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba2bcc01df5ac34a89e7af18d6f01de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lights: []
   lightPosX: {x: 0, y: 0, z: 0, w: 0}
   lightPosY: {x: 0, y: 0, z: 0, w: 0}
   lightPosZ: {x: 0, y: 0, z: 0, w: 0}
-  lightRangeW: {x: 0, y: 0, z: 0, w: 0}
   lightColorR: {x: 0, y: 0, z: 0, w: 0}
   lightColorG: {x: 0, y: 0, z: 0, w: 0}
   lightColorB: {x: 0, y: 0, z: 0, w: 0}
   lightIntensityA: {x: 0, y: 0, z: 0, w: 0}
---- !u!1 &1601099030
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1601099032}
-  - component: {fileID: 1601099031}
-  m_Layer: 0
-  m_Name: Light Buffer Manager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1601099031
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1601099030}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7ba2bcc01df5ac34a89e7af18d6f01de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lightPosX: {x: 0, y: 0, z: 0, w: 0}
-  lightPosY: {x: 0, y: 0, z: 0, w: 0}
-  lightPosZ: {x: 0, y: 0, z: 0, w: 0}
   lightRangeW: {x: 0, y: 0, z: 0, w: 0}
-  lightColorR: {x: 0, y: 0, z: 0, w: 0}
-  lightColorG: {x: 0, y: 0, z: 0, w: 0}
-  lightColorB: {x: 0, y: 0, z: 0, w: 0}
-  lightIntensityA: {x: 0, y: 0, z: 0, w: 0}
---- !u!4 &1601099032
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1601099030}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.6557947, y: 0, z: -1.5789396}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  lightDataSetLength: 0
+  lightObject: {fileID: 0}
 --- !u!1 &2133795817
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,7 +643,7 @@ Light:
   serializedVersion: 8
   m_Type: 0
   m_Color: {r: 0, g: 0, b: 1, a: 1}
-  m_Intensity: 76.8
+  m_Intensity: 0
   m_Range: 10
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -708,7 +681,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 216.88, y: -90, z: -90}
 --- !u!114 &2133795820
 MonoBehaviour:
@@ -721,3 +694,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _isInBuffer: 0
+  _isInCamera: 0
+  tick: 0
+  updateTick: 0
+  lightObject: {fileID: 2133795818}
+  camObject: {fileID: 534669904}

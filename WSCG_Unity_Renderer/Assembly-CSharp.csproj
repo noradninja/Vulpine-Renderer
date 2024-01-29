@@ -61,7 +61,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Libraries\Lib.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\LightBufferManager.cs" />
-    <Compile Include="Assets\Scripts\Managers\Rendering\LightManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\Rendering\LightCluster.cs" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/WSCG_Unity_Renderer/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>
