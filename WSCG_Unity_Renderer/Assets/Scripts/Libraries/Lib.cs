@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 namespace WSCG.Lib
@@ -112,6 +111,24 @@ namespace WSCG.Lib
 
 	namespace Rendering
 	{
-		//stuff like 
+		public enum FrameInterval
+		{
+			EveryFrame,
+			EveryOtherFrame,
+			Every3Frames,
+			Every5Frames,
+			Every10Frames,
+			Every15Frames,
+			Every30Frames,
+			Every60Frames
+		};
+
+		public struct LightData
+		{
+			public Vector4 position;
+			public Vector4 color;
+			public Vector2 intensityRange;
+		}
+
 	}
 }
