@@ -108,27 +108,4 @@ namespace WSCG.Lib
 			}
 		}
 	}
-
-	namespace Rendering
-	{
-		public enum FrameInterval
-		{
-			EveryFrame,
-			EveryOtherFrame,
-			Every3Frames,
-			Every5Frames,
-			Every10Frames,
-			Every15Frames,
-			Every30Frames,
-			Every60Frames
-		};
-
-		public struct LightData
-		{
-			public Vector4 position;
-			public Vector4 color;
-			public Vector2 intensityRange;
-		}
-
-	}
 }

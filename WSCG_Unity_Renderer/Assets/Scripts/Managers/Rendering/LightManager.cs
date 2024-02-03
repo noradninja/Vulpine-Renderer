@@ -1,51 +1,163 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
-using WSCG.Lib;
-using WSCG.Lib.Rendering;
+using UnityEngine.Rendering;
 
-namespace WSCG.Lighting
+public class LightManager : MonoBehaviour
 {
-    public class LightManager : MonoBehaviour
+    public enum LightType
     {
-        private List<LightData> visibleLightsData = new List<LightData>();
-        private List<Light> visibleLights = new List<Light>();
-        private LightData data = new LightData();
+        Directional,
+        PointSpot
+    }
 
-        public void OnVisible(Light light)
+    [System.Serializable]
+    public struct LightData
+    {
+        public Vector3 position;
+        public Vector4 color;
+        public float range;
+        public float intensity;
+        public float lightType;
+    }
+
+    private const int MaxLights = 8;
+    private const int LightDataSize = sizeof(float) * 10; // Total size of LightData in bytes = 4 bytes/float * (3 + 4 + 1 + 1 + 1)
+    public LightData[] lightsArray = new LightData[MaxLights];
+    private ComputeBuffer lightDataBuffer;
+    private int numActiveLights;
+
+    private void Start()
+    {
+        lightDataBuffer = new ComputeBuffer(MaxLights, LightDataSize);
+        UpdateBuffer();
+    }
+
+    private void OnDestroy()
+    {
+        lightDataBuffer.Release();
+    }
+
+    public void OnVisible(Light visibleLight)
+    {
+        visibleLight.intensity = 25;
+        LightData data = new LightData
         {
-            light.intensity = 25;
-            // Add light data to the list
-            data.position = light.transform.position;
-            data.color = new Vector4(light.color.r, light.color.g, light.color.b, 1.0f);
-            data.intensityRange = new Vector2(light.intensity, light.range);
-            visibleLightsData.Add(data);
+            position = visibleLight.transform.position,
+            color = visibleLight.color.linear,
+            range = visibleLight.range,
+            intensity = visibleLight.intensity,
+            lightType = (float)visibleLight.type
+        };
 
-            // Sort lights by distance to the camera
-            visibleLightsData.Sort((a, b) =>
-                Vector3.Distance(Camera.main.transform.position, a.position)
-                    .CompareTo(Vector3.Distance(Camera.main.transform.position, b.position)));
-            visibleLights.Add(light);
-            // Keep only the closest 6 lights
-            visibleLightsData = visibleLightsData.GetRange(0, Mathf.Min(visibleLightsData.Count, 6));
+        AddLightToArray(data);
+        visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
+        visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
 
-            // Set isInBuffer boolean for lights
-            light.GetComponent<LightVisibility>().isVisible = true;
-            light.GetComponent<LightVisibility>().isInBuffer = true;
-            ComputeBufferManager.AddLightData(data);
-            Debug.Log(light.name + " added to buffer");
+        UpdateBuffer();
+    }
+
+    public void OnNotVisible(Light nonVisibleLight)
+    {
+        LightData dataToRemove = new LightData();
+
+        for (int i = 0; i < numActiveLights; i++)
+        {
+            if (lightsArray[i].position == nonVisibleLight.transform.position)
+            {
+                dataToRemove = lightsArray[i];
+                break;
+            }
         }
 
-        public void OnNotVisible(Light light)
-        {
-            light.intensity = 0;
-            // Remove light data from the list
-            visibleLightsData.RemoveAll(data => data.position == this.data.position);
+        RemoveLightFromArray(dataToRemove);
+        nonVisibleLight.GetComponent<LightVisibility>().isInBuffer = false;
+        nonVisibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = true;
 
-            // Set isInBuffer boolean for lights
-            light.GetComponent<LightVisibility>().isVisible = false;
-            light.GetComponent<LightVisibility>().isInBuffer = false;
-            ComputeBufferManager.RemoveLightData(data);
-            Debug.Log(light.name + " removed from buffer");
+        nonVisibleLight.intensity = 0;
+
+        UpdateBuffer();
+    }
+
+    private void AddLightToArray(LightData newLight)
+    {
+        if (numActiveLights >= MaxLights)
+        {
+            float maxDistance = 0f;
+            int indexToRemove = 0;
+
+            for (int i = 0; i < numActiveLights; i++)
+            {
+                float distance = Vector3.Distance(lightsArray[i].position, Camera.main.transform.position);
+                if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                    indexToRemove = i;
+                }
+            }
+
+            lightsArray[indexToRemove] = newLight;
+        }
+        else
+        {
+            lightsArray[numActiveLights] = newLight;
+            numActiveLights++;
+        }
+    }
+
+    private void RemoveLightFromArray(LightData lightToRemove)
+    {
+        int indexToRemove = -1;
+
+        for (int i = 0; i < numActiveLights; i++)
+        {
+            if (lightsArray[i].position == lightToRemove.position)
+            {
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        if (indexToRemove != -1)
+        {
+            for (int i = indexToRemove; i < numActiveLights - 1; i++)
+            {
+                lightsArray[i] = lightsArray[i + 1];
+            }
+            numActiveLights--;
+        }
+    }
+
+    private void UpdateBuffer()
+    {
+        lightDataBuffer.SetData(lightsArray);
+        Shader.SetGlobalBuffer("_LightDataBuffer", lightDataBuffer);
+        Shader.SetGlobalInt("_NumActiveLights", numActiveLights);
+
+        // Debug log the data in the lightDataBuffer with byte offsets
+        byte[] debugData = new byte[sizeof(float) * 10 * MaxLights];
+        lightDataBuffer.GetData(debugData);
+
+        Debug.Log("Debugging LightDataBuffer:");
+
+        for (int i = 0; i < numActiveLights; i++)
+        {
+            int byteOffset = i * sizeof(float) * 10;
+
+            float posX = BitConverter.ToSingle(debugData, byteOffset);
+            float posY = BitConverter.ToSingle(debugData, byteOffset + sizeof(float));
+            float posZ = BitConverter.ToSingle(debugData, byteOffset + 2 * sizeof(float));
+
+            float colorR = BitConverter.ToSingle(debugData, byteOffset + 3 * sizeof(float));
+            float colorG = BitConverter.ToSingle(debugData, byteOffset + 4 * sizeof(float));
+            float colorB = BitConverter.ToSingle(debugData, byteOffset + 5 * sizeof(float));
+            float colorA = BitConverter.ToSingle(debugData, byteOffset + 6 * sizeof(float));
+
+            float range = BitConverter.ToSingle(debugData, byteOffset + 7 * sizeof(float));
+            float intensity = BitConverter.ToSingle(debugData, byteOffset + 8 * sizeof(float));
+            float lightType = BitConverter.ToSingle(debugData, byteOffset + 9 * sizeof(float));
+
+            Debug.Log("Light " + (i + 1) + ":");
+            Debug.Log("Position: " + new Vector3(posX, posY, posZ) + " Color: " + new Color(colorR, colorG, colorB, colorA) + " Range: " + range + " Intensity: " + intensity + " LightType: " + lightType);
         }
     }
 }

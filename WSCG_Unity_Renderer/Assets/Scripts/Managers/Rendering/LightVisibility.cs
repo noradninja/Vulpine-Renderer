@@ -1,81 +1,92 @@
 ﻿using UnityEngine;
-using WSCG.Lib.Rendering;
-using WSCG.Lighting;
-using WSCG.Systems;
 
-namespace WSCG.Lib
+public class LightVisibility : MonoBehaviour
 {
+    public Light _thisLight;
+    public LightManager _lightManager;
+    public EventBroadcaster _broadcaster;
 
+    public bool isVisible = false;
+    public bool wasPreviouslyVisible = false;
+    public bool isInBuffer = false;
 
-    public class LightVisibility : MonoBehaviour
+    public enum FrameInterval
     {
-        public bool isVisible = false;
-        public bool isInBuffer = false;
-        public bool wasPreviouslyVisible;
-        public Light thisLight;
-        public LightManager lightManager;
+        EveryFrame,
+        EveryOtherFrame,
+        Every3Frames,
+        Every5Frames,
+        Every10Frames,
+        Every15Frames,
+        Every30Frames,
+        Every60Frames
+    };
 
+    public FrameInterval frameInterval;
 
-        public FrameInterval frameInterval;
+    private void Start()
+    {
+        _thisLight = GetComponent<Light>();
+        _broadcaster = FindObjectOfType<EventBroadcaster>();
+        _lightManager = FindObjectOfType<LightManager>();
 
-        private void Start()
+        if (_broadcaster == null) return;
+
+        switch (frameInterval)
         {
-            thisLight = GetComponent<Light>();
-            EventBroadcaster broadcaster = FindObjectOfType<EventBroadcaster>();
-            if (broadcaster != null)
+            case FrameInterval.EveryFrame:
+                _broadcaster.onFrame1.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.EveryOtherFrame:
+                _broadcaster.onFrame2.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.Every3Frames:
+                _broadcaster.onFrame3.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.Every5Frames:
+                _broadcaster.onFrame5.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.Every10Frames:
+                _broadcaster.onFrame10.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.Every15Frames:
+                _broadcaster.onFrame15.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.Every30Frames:
+                _broadcaster.onFrame30.AddListener(CheckVisibility);
+                break;
+            case FrameInterval.Every60Frames:
+                _broadcaster.onFrame60.AddListener(CheckVisibility);
+                break;
+        }
+    }
+
+    void CheckVisibility(int frame)
+    {
+        Bounds lightBounds = new Bounds(transform.position, Vector3.one * _thisLight.range);
+
+        if (Camera.main != null && GeometryUtility.TestPlanesAABB(
+                GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix),
+                lightBounds))
+        {
+            if (!isVisible)
             {
-                switch (frameInterval)
-                {
-                    case FrameInterval.EveryFrame:
-                        broadcaster.onFrame1.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.EveryOtherFrame:
-                        broadcaster.onFrame2.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.Every3Frames:
-                        broadcaster.onFrame3.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.Every5Frames:
-                        broadcaster.onFrame5.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.Every10Frames:
-                        broadcaster.onFrame10.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.Every15Frames:
-                        broadcaster.onFrame15.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.Every30Frames:
-                        broadcaster.onFrame30.AddListener(CheckVisibility);
-                        break;
-                    case FrameInterval.Every60Frames:
-                        broadcaster.onFrame60.AddListener(CheckVisibility);
-                        break;
-                }
+                isVisible = true;
+                _lightManager.OnVisible(_thisLight);
+
             }
         }
 
-        void CheckVisibility(int frame)
+        if (Camera.main != null && !GeometryUtility.TestPlanesAABB(
+                GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix), lightBounds))
         {
-            wasPreviouslyVisible = isVisible;
-            Bounds lightBounds = new Bounds(transform.position, Vector3.one * GetComponent<Light>().range);
-            Debug.Log(thisLight.name + " is checking visibility at interval " + frameInterval);
-            if (Camera.main != null)
+            if (isVisible)
             {
-                isVisible = GeometryUtility.TestPlanesAABB(
-                    GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix), lightBounds);
-
-                if (isVisible && !wasPreviouslyVisible)
-                {
-                    lightManager.OnVisible(thisLight);
-                }
-                else if (!isVisible && wasPreviouslyVisible)
-                {
-                    lightManager.OnNotVisible(thisLight);
-                }
-
-                // Update wasPreviouslyVisible for the next frame
-                wasPreviouslyVisible = isVisible;
+                isVisible = false;
+                _lightManager.OnNotVisible(_thisLight);
             }
         }
+        // Update wasPreviouslyVisible for the next frame
+        wasPreviouslyVisible = isVisible;
     }
 }

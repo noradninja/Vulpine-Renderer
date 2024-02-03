@@ -191,12 +191,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isVisible: 0
+  _thisLight: {fileID: 0}
+  _lightManager: {fileID: 0}
+  _broadcaster: {fileID: 0}
   isInBuffer: 0
-  wasPreviouslyVisible: 0
-  thisLight: {fileID: 0}
-  lightManager: {fileID: 1317738735}
-  frameInterval: 3
+  frameInterval: 2
 --- !u!1 &116952894
 GameObject:
   m_ObjectHideFlags: 0
@@ -275,12 +274,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isVisible: 0
+  _thisLight: {fileID: 0}
+  _lightManager: {fileID: 0}
+  _broadcaster: {fileID: 0}
   isInBuffer: 0
-  wasPreviouslyVisible: 0
-  thisLight: {fileID: 0}
-  lightManager: {fileID: 1317738735}
-  frameInterval: 5
+  frameInterval: 2
 --- !u!1 &170076733
 GameObject:
   m_ObjectHideFlags: 0
@@ -392,7 +390,7 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RenderingLayerMask: 4294967295
   m_Materials:
-  - {fileID: 2100000, guid: b6fb32c00211d924b96f22f244de8211, type: 2}
+  - {fileID: 2100000, guid: 057acba906435f34da2e1a445d876214, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -510,12 +508,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isVisible: 0
+  _thisLight: {fileID: 0}
+  _lightManager: {fileID: 0}
+  _broadcaster: {fileID: 0}
   isInBuffer: 0
-  wasPreviouslyVisible: 0
-  thisLight: {fileID: 0}
-  lightManager: {fileID: 1317738735}
-  frameInterval: 4
+  frameInterval: 2
 --- !u!1 &534669902
 GameObject:
   m_ObjectHideFlags: 0
@@ -574,7 +571,7 @@ Camera:
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
-  m_AllowMSAA: 0
+  m_AllowMSAA: 1
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
@@ -602,7 +599,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1317738736}
   - component: {fileID: 1317738735}
-  - component: {fileID: 1317738734}
   m_Layer: 0
   m_Name: Light Buffer Manager
   m_TagString: Untagged
@@ -610,17 +606,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1317738734
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1317738733}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ad265f781025fa4aabe4ce3e3faeca7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1317738735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -632,6 +617,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba2bcc01df5ac34a89e7af18d6f01de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lightsArray:
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
+  - position: {x: 0, y: 0, z: 0}
+    color: {x: 0, y: 0, z: 0, w: 0}
+    range: 0
+    intensity: 0
+    lightType: 0
 --- !u!4 &1317738736
 Transform:
   m_ObjectHideFlags: 0
@@ -675,43 +701,43 @@ MonoBehaviour:
   onFrame1:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame2:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame3:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame5:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame10:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame15:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame30:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
   onFrame60:
     m_PersistentCalls:
       m_Calls: []
-    m_TypeName: WSCG.Systems.EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    m_TypeName: EventBroadcaster+FrameEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+      PublicKeyToken=null
 --- !u!4 &1957711920
 Transform:
   m_ObjectHideFlags: 0
@@ -754,7 +780,7 @@ Light:
   m_Color: {r: 0, g: 0, b: 1, a: 1}
   m_Intensity: 0
   m_Range: 10
-  m_SpotAngle: 30
+  m_SpotAngle: 15.282042
   m_CookieSize: 10
   m_Shadows:
     m_Type: 0
@@ -803,9 +829,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isVisible: 0
+  _thisLight: {fileID: 0}
+  _lightManager: {fileID: 0}
+  _broadcaster: {fileID: 0}
   isInBuffer: 0
-  wasPreviouslyVisible: 0
-  thisLight: {fileID: 0}
-  lightManager: {fileID: 1317738735}
-  frameInterval: 6
+  frameInterval: 2
