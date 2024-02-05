@@ -1,6 +1,4 @@
-﻿using System;
-using UnityEngine;
-using UnityEngine.Rendering;
+﻿using UnityEngine;
 
 public class LightManager : MonoBehaviour
 {
@@ -13,43 +11,64 @@ public class LightManager : MonoBehaviour
     [System.Serializable]
     public struct LightData
     {
-        public Vector3 position;
+        public Vector4 position;
         public Vector4 color;
-        public float range;
-        public float intensity;
-        public float lightType;
+        public Vector4 variables;
     }
 
     private const int MaxLights = 8;
-    private const int LightDataSize = sizeof(float) * 10; // Total size of LightData in bytes = 4 bytes/float * (3 + 4 + 1 + 1 + 1)
-    public LightData[] lightsArray = new LightData[MaxLights];
-    private ComputeBuffer lightDataBuffer;
-    private int numActiveLights;
+    private const int LightDataSize = sizeof(float) * 12;
+
+    // Separate arrays for directional and point/spot lights
+    public LightData[] directionalLightsArray = new LightData[MaxLights];
+    public LightData[] pointSpotLightsArray = new LightData[MaxLights];
+
+    private ComputeBuffer directionalLightsBuffer;
+    private ComputeBuffer pointSpotLightsBuffer;
+
+    public int numActiveDirectionalLights;
+    public int numActivePointSpotLights;
 
     private void Start()
     {
-        lightDataBuffer = new ComputeBuffer(MaxLights, LightDataSize);
+        directionalLightsBuffer = new ComputeBuffer(MaxLights, LightDataSize, ComputeBufferType.Default);
+        pointSpotLightsBuffer = new ComputeBuffer(MaxLights, LightDataSize, ComputeBufferType.Default);
+
+        Shader.SetGlobalBuffer("_DirectionalLightsBuffer", directionalLightsBuffer);
+        Shader.SetGlobalBuffer("_PointSpotLightsBuffer", pointSpotLightsBuffer);
+
         UpdateBuffer();
     }
 
     private void OnDestroy()
     {
-        lightDataBuffer.Release();
+        directionalLightsBuffer.Release();
+        pointSpotLightsBuffer.Release();
     }
 
     public void OnVisible(Light visibleLight)
     {
         visibleLight.intensity = 25;
-        LightData data = new LightData
-        {
-            position = visibleLight.transform.position,
-            color = visibleLight.color.linear,
-            range = visibleLight.range,
-            intensity = visibleLight.intensity,
-            lightType = (float)visibleLight.type
-        };
+        LightData data = new LightData();
 
-        AddLightToArray(data);
+        data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, 1);
+        data.color = visibleLight.color.linear;
+        data.variables.x = visibleLight.range;
+        data.variables.y = visibleLight.intensity;
+        data.variables.z = 1;
+        data.variables.w = 1;
+
+        if (visibleLight.type == UnityEngine.LightType.Directional)
+        {
+            AddDirectionalLightToArray(data);
+        }
+        else if (visibleLight.type == UnityEngine.LightType.Point||
+
+                 visibleLight.type == UnityEngine.LightType.Spot)
+        {
+            AddPointSpotLightToArray(data);
+        }
+
         visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
 
@@ -59,17 +78,18 @@ public class LightManager : MonoBehaviour
     public void OnNotVisible(Light nonVisibleLight)
     {
         LightData dataToRemove = new LightData();
+        Vector4 NVLtransform = new Vector4(nonVisibleLight.transform.position.x, nonVisibleLight.transform.position.y,
+            nonVisibleLight.transform.position.z, 1);
 
-        for (int i = 0; i < numActiveLights; i++)
+        if (nonVisibleLight.type == UnityEngine.LightType.Directional)
         {
-            if (lightsArray[i].position == nonVisibleLight.transform.position)
-            {
-                dataToRemove = lightsArray[i];
-                break;
-            }
+            RemoveDirectionalLightFromArray(NVLtransform);
+        }
+        else if (nonVisibleLight.type == UnityEngine.LightType.Point || nonVisibleLight.type == UnityEngine.LightType.Point)
+        {
+            RemovePointSpotLightFromArray(NVLtransform);
         }
 
-        RemoveLightFromArray(dataToRemove);
         nonVisibleLight.GetComponent<LightVisibility>().isInBuffer = false;
         nonVisibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = true;
 
@@ -78,39 +98,33 @@ public class LightManager : MonoBehaviour
         UpdateBuffer();
     }
 
-    private void AddLightToArray(LightData newLight)
+    private void AddDirectionalLightToArray(LightData newLight)
     {
-        if (numActiveLights >= MaxLights)
+        if (numActiveDirectionalLights < MaxLights)
         {
-            float maxDistance = 0f;
-            int indexToRemove = 0;
-
-            for (int i = 0; i < numActiveLights; i++)
-            {
-                float distance = Vector3.Distance(lightsArray[i].position, Camera.main.transform.position);
-                if (distance > maxDistance)
-                {
-                    maxDistance = distance;
-                    indexToRemove = i;
-                }
-            }
-
-            lightsArray[indexToRemove] = newLight;
-        }
-        else
-        {
-            lightsArray[numActiveLights] = newLight;
-            numActiveLights++;
+            directionalLightsArray[numActiveDirectionalLights] = newLight;
+            numActiveDirectionalLights++;
+            DebugData(directionalLightsArray, "sent directionalLightsArray");
         }
     }
 
-    private void RemoveLightFromArray(LightData lightToRemove)
+    private void AddPointSpotLightToArray(LightData newLight)
+    {
+        if (numActivePointSpotLights < MaxLights)
+        {
+            pointSpotLightsArray[numActivePointSpotLights] = newLight;
+            numActivePointSpotLights++;
+            DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
+        }
+    }
+
+    private void RemoveDirectionalLightFromArray(Vector4 lightPosition)
     {
         int indexToRemove = -1;
 
-        for (int i = 0; i < numActiveLights; i++)
+        for (int i = 0; i < numActiveDirectionalLights; i++)
         {
-            if (lightsArray[i].position == lightToRemove.position)
+            if (directionalLightsArray[i].position == lightPosition)
             {
                 indexToRemove = i;
                 break;
@@ -119,45 +133,66 @@ public class LightManager : MonoBehaviour
 
         if (indexToRemove != -1)
         {
-            for (int i = indexToRemove; i < numActiveLights - 1; i++)
+            for (int i = indexToRemove; i < numActiveDirectionalLights - 1; i++)
             {
-                lightsArray[i] = lightsArray[i + 1];
+                directionalLightsArray[i] = directionalLightsArray[i + 1];
             }
-            numActiveLights--;
+            numActiveDirectionalLights--;
+            DebugData(directionalLightsArray, "sent directionalLightsArray");
+        }
+    }
+
+    private void RemovePointSpotLightFromArray(Vector4 lightPosition)
+    {
+        int indexToRemove = -1;
+
+        for (int i = 0; i < numActivePointSpotLights; i++)
+        {
+            if (pointSpotLightsArray[i].position == lightPosition)
+            {
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        if (indexToRemove != -1)
+        {
+            for (int i = indexToRemove; i < numActivePointSpotLights - 1; i++)
+            {
+                pointSpotLightsArray[i] = pointSpotLightsArray[i + 1];
+            }
+            numActivePointSpotLights--;
+            DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
         }
     }
 
     private void UpdateBuffer()
     {
-        lightDataBuffer.SetData(lightsArray);
-        Shader.SetGlobalBuffer("_LightDataBuffer", lightDataBuffer);
-        Shader.SetGlobalInt("_NumActiveLights", numActiveLights);
+        directionalLightsBuffer.SetData(directionalLightsArray);
+        pointSpotLightsBuffer.SetData(pointSpotLightsArray);
 
-        // Debug log the data in the lightDataBuffer with byte offsets
-        byte[] debugData = new byte[sizeof(float) * 10 * MaxLights];
-        lightDataBuffer.GetData(debugData);
+        Shader.SetGlobalInt("_NumDirectionalLights", numActiveDirectionalLights);
+        Shader.SetGlobalInt("_NumPointSpotLights", numActivePointSpotLights);
+    }
 
-        Debug.Log("Debugging LightDataBuffer:");
+    private void DebugData(LightData[] lightDatas, string arrayName)
+    {
+        Debug.Log("Debugging Data from " + arrayName + ":");
 
-        for (int i = 0; i < numActiveLights; i++)
+        for (int i = 0; i < MaxLights; i++)
         {
-            int byteOffset = i * sizeof(float) * 10;
-
-            float posX = BitConverter.ToSingle(debugData, byteOffset);
-            float posY = BitConverter.ToSingle(debugData, byteOffset + sizeof(float));
-            float posZ = BitConverter.ToSingle(debugData, byteOffset + 2 * sizeof(float));
-
-            float colorR = BitConverter.ToSingle(debugData, byteOffset + 3 * sizeof(float));
-            float colorG = BitConverter.ToSingle(debugData, byteOffset + 4 * sizeof(float));
-            float colorB = BitConverter.ToSingle(debugData, byteOffset + 5 * sizeof(float));
-            float colorA = BitConverter.ToSingle(debugData, byteOffset + 6 * sizeof(float));
-
-            float range = BitConverter.ToSingle(debugData, byteOffset + 7 * sizeof(float));
-            float intensity = BitConverter.ToSingle(debugData, byteOffset + 8 * sizeof(float));
-            float lightType = BitConverter.ToSingle(debugData, byteOffset + 9 * sizeof(float));
-
-            Debug.Log("Light " + (i + 1) + ":");
-            Debug.Log("Position: " + new Vector3(posX, posY, posZ) + " Color: " + new Color(colorR, colorG, colorB, colorA) + " Range: " + range + " Intensity: " + intensity + " LightType: " + lightType);
+            if (i < lightDatas.Length)
+            {
+                Debug.Log("Light " + (i + 1) + ": " +
+                          "Position: " + lightDatas[i].position +
+                          ", Color: " + lightDatas[i].color +
+                          ", Range: " + lightDatas[i].variables.x +
+                          ", Intensity: " + lightDatas[i].variables.y);
+            }
+            else
+            {
+                Debug.Log("Light " + (i + 1) + ": Inactive");
+            }
         }
     }
 }

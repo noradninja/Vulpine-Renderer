@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\Managers\Rendering\EventBroadcaster.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\LightManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\LightVisibility.cs" />
+    <Compile Include="Assets\Scripts\Managers\Rendering\ShaderController.cs" />
     <None Include="Assets\LightingCalculations.cginc" />
     <None Include="Assets\Lighting.cginc" />
     <None Include="Assets\Test.shader" />
