@@ -33,12 +33,12 @@ public class LightManager : MonoBehaviour
     {
         directionalLightsBuffer = new ComputeBuffer(MaxLights, LightDataSize, ComputeBufferType.Default);
         pointSpotLightsBuffer = new ComputeBuffer(MaxLights, LightDataSize, ComputeBufferType.Default);
-
-        Shader.SetGlobalBuffer("_DirectionalLightsBuffer", directionalLightsBuffer);
-        Shader.SetGlobalBuffer("_PointSpotLightsBuffer", pointSpotLightsBuffer);
-
+        
         UpdateBuffer();
+        SendBufferToGPU();
     }
+
+
 
     private void OnDestroy()
     {
@@ -48,7 +48,7 @@ public class LightManager : MonoBehaviour
 
     public void OnVisible(Light visibleLight)
     {
-        visibleLight.intensity = 25;
+        visibleLight.intensity = 3;
         LightData data = new LightData();
 
         data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, 1);
@@ -73,6 +73,7 @@ public class LightManager : MonoBehaviour
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
 
         UpdateBuffer();
+        SendBufferToGPU();
     }
 
     public void OnNotVisible(Light nonVisibleLight)
@@ -96,6 +97,7 @@ public class LightManager : MonoBehaviour
         nonVisibleLight.intensity = 0;
 
         UpdateBuffer();
+        SendBufferToGPU();
     }
 
     private void AddDirectionalLightToArray(LightData newLight)
@@ -168,13 +170,21 @@ public class LightManager : MonoBehaviour
 
     private void UpdateBuffer()
     {
+        //set the data in the buffer
         directionalLightsBuffer.SetData(directionalLightsArray);
         pointSpotLightsBuffer.SetData(pointSpotLightsArray);
+        
+    }
 
+    private void SendBufferToGPU()
+    {
+        //send the data to the GPU
+        Shader.SetGlobalBuffer("_DirectionalLightsBuffer", directionalLightsBuffer);
+        Shader.SetGlobalBuffer("_PointSpotLightsBuffer", pointSpotLightsBuffer);
         Shader.SetGlobalInt("_NumDirectionalLights", numActiveDirectionalLights);
         Shader.SetGlobalInt("_NumPointSpotLights", numActivePointSpotLights);
     }
-
+    
     private void DebugData(LightData[] lightDatas, string arrayName)
     {
         Debug.Log("Debugging Data from " + arrayName + ":");

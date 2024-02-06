@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class LightVisibility : MonoBehaviour
 {
@@ -24,12 +25,17 @@ public class LightVisibility : MonoBehaviour
 
     public FrameInterval frameInterval;
 
+    private float _prevIntensity;
+    private float _prevRange;
+    private float _intensity;
+    private float _range;
     private void Start()
     {
         _thisLight = GetComponent<Light>();
         _broadcaster = FindObjectOfType<EventBroadcaster>();
         _lightManager = FindObjectOfType<LightManager>();
-
+        _intensity = _thisLight.intensity;
+        _range = _thisLight.range;
         if (_broadcaster == null) return;
 
         switch (frameInterval)
@@ -58,6 +64,15 @@ public class LightVisibility : MonoBehaviour
             case FrameInterval.Every60Frames:
                 _broadcaster.onFrame60.AddListener(CheckVisibility);
                 break;
+        }
+    }
+
+    private void Update()
+    {
+        if (_intensity != _prevIntensity && isVisible)
+        {
+            _lightManager.OnNotVisible(_thisLight);
+            _lightManager.OnVisible(_thisLight);
         }
     }
 

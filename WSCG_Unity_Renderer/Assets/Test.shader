@@ -16,6 +16,7 @@
         {
             CGPROGRAM
             #pragma vertex vert
+            #pragma exclude_renderers gles xbox360 ps3
             #pragma fragment frag
             #pragma target 3.0
             #include "UnityCG.cginc"
@@ -23,7 +24,8 @@
             #include "UnityPBSLighting.cginc"
             #include "UnityStandardUtils.cginc"
             #include "Lighting.cginc"
-  // to make internal referencing easier
+
+            // to make internal referencing easier
             struct LightData
             {
                 float3 position;
@@ -45,26 +47,12 @@
             float _Roughness;
             float _Specular;
 
-            // Lambert Diffuse and Blinn-Phong Specular Lighting Calculation
-            float4 LambertDiffuseAndBlinnPhongSpecular(float3 normal, float3 viewDir, float3 albedo, float3 lightColor, float shininess, float3 lightPos, float lightRange, float lightIntensity)
-            {
-                // Lambert Diffuse
-                float diffuseFactor = max(0, dot(normal, normalize(lightPos)));
-                float3 diffuse = albedo * lightColor * lightIntensity * diffuseFactor / (1 + (0.01 * lightRange * lightRange));
-
-                // Blinn-Phong Specular
-                float3 halfwayDir = normalize(lightPos + viewDir);
-                float specularFactor = pow(max(0, dot(normal, halfwayDir)), shininess);
-                float3 specular = _Specular * lightColor * lightIntensity * specularFactor / (1 + (0.01 * lightRange * lightRange));
-
-                return float4(diffuse + specular, 1.0);
-            }
-
             // Struct for Vertex Input
             struct appdata
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+                float4 color : COLOR;
             };
 
             // Struct for Vertex Output
@@ -80,11 +68,55 @@
             v2f vert(appdata v)
             {
                 v2f o;
+                float4x4 modelMatrix = unity_ObjectToWorld;
+                float4x4 modelMatrixInverse = unity_WorldToObject;
+                
+                o.worldPos = mul(modelMatrix, v.vertex).xyz;
+                o.normal = mul(float4(v.normal, 0.0), modelMatrixInverse).xyz;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-                o.normal = UnityObjectToWorldNormal(v.normal);
-
+                o.color = v.color * 0.5;
                 return o;
+            }
+
+            float SpecularTerm(float3 lightDir, float3 viewDir, float3 normal, float shininess)
+            {
+                float3 H = normalize(lightDir + viewDir);
+                float spec = pow(max(0.0, dot(H, normal)), shininess);
+                return spec;
+            }
+
+            
+            // Lambert Diffuse and Blinn-Phong Specular Lighting Calculation
+            float4 LambertDiffuseAndBlinnPhongSpecular(float3 normal, float3 viewDir, float3 worldPos, float3 albedo, float3 lightColor, float shininess, float3 lightPos, float lightRange, float lightIntensity, float lightType)
+            {
+                float3 normalDirection = normalize(normal);
+                float3 viewDirection = normalize(viewDir);
+                float3 lightDirection;
+                float attenuation;
+
+                if (0.0 == lightType) // directional light?
+                {
+                    attenuation = 1.0; // no attenuation
+                    lightDirection = normalize(lightPos);
+                }
+                else // point or spot light
+                {
+                    float3 vertexToLightSource = lightPos - worldPos;
+                    float distance = length(vertexToLightSource);
+                    attenuation = 1.0 / distance; // linear attenuation 
+                    lightDirection = normalize(vertexToLightSource);
+                }
+
+                float3 ambientLighting = UNITY_LIGHTMODEL_AMBIENT * albedo;
+
+                float diff = LambertTerm(lightDirection, normalDirection);
+                float spec = SpecularTerm(lightDirection, viewDirection, normalDirection, shininess);
+
+                float3 diffuseReflection = attenuation * lightColor * albedo * diff;
+
+                float3 specularReflection = attenuation * lightColor * _Specular * spec;
+
+                return float4(ambientLighting + diffuseReflection + specularReflection, 1.0);
             }
 
             // Fragment Shader
@@ -101,11 +133,11 @@
                     // Calculate array index for the current light
                     int arrayIndex = j;
 
-                    // Extract LightData using array indices from global buffer
+                    // Extract LightData using array indices from the global buffer
                     LightData light = _DirectionalLightsBuffer[arrayIndex];
 
                     // Add directional light contribution
-                    accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, float3(1, 1, 1), light.color.rgb, _Roughness, light.position, light.range, light.intensity);
+                    accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(1, 1, 1), light.color.rgb, _Roughness, light.position, light.range, light.intensity, 0.0);
                 }
 
                 // Loop over point/spot lights
@@ -114,16 +146,17 @@
                     // Calculate array index for the current light
                     int arrayIndexPS = k;
 
-                    // Extract LightData using array indices from global buffer
+                    // Extract LightData using array indices from the global buffer
                     LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
 
                     // Add point/spot light contribution
-                    accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, float3(1, 1, 1), pointSpotLight.color.rgb, _Roughness, pointSpotLight.position, pointSpotLight.range, pointSpotLight.intensity);
+                    accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(0.5, 0.5, 0.5), pointSpotLight.color.rgb, _Roughness, pointSpotLight.position, pointSpotLight.range, pointSpotLight.intensity, 1.0);
                 }
 
-                // Assign final color to pixel
+                // Assign the final color to the pixel
                 return float4(accumColor, 1.0);
             }
+
             ENDCG
         }
     }
