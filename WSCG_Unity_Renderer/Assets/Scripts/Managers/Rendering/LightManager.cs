@@ -2,12 +2,6 @@
 
 public class LightManager : MonoBehaviour
 {
-    public enum LightType
-    {
-        Directional,
-        PointSpot
-    }
-
     [System.Serializable]
     public struct LightData
     {
@@ -15,16 +9,24 @@ public class LightManager : MonoBehaviour
         public Vector4 color;
         public Vector4 variables;
     }
+    [System.Serializable]
+    public struct CookieTextures
+    {
+        public Texture thisLightCookie;
+    }
 
     private const int MaxLights = 8;
     private const int LightDataSize = sizeof(float) * 12;
+    private const int CookieDataSize = 65536; //8bpp monochrome = 1byte/pixel * width * height, we are assuming a 256x256 cookie here
 
     // Separate arrays for directional and point/spot lights
     public LightData[] directionalLightsArray = new LightData[MaxLights];
     public LightData[] pointSpotLightsArray = new LightData[MaxLights];
+    public Texture[] cookieTextures = new Texture[MaxLights];
 
     private ComputeBuffer directionalLightsBuffer;
     private ComputeBuffer pointSpotLightsBuffer;
+    private ComputeBuffer lightCookiesBuffer;
 
     public int numActiveDirectionalLights;
     public int numActivePointSpotLights;
@@ -33,7 +35,8 @@ public class LightManager : MonoBehaviour
     {
         directionalLightsBuffer = new ComputeBuffer(MaxLights, LightDataSize, ComputeBufferType.Default);
         pointSpotLightsBuffer = new ComputeBuffer(MaxLights, LightDataSize, ComputeBufferType.Default);
-        
+        lightCookiesBuffer = new ComputeBuffer(MaxLights, CookieDataSize, ComputeBufferType.Default);
+
         UpdateBuffer();
         SendBufferToGPU();
     }
@@ -50,7 +53,7 @@ public class LightManager : MonoBehaviour
     {
         visibleLight.intensity = 3;
         LightData data = new LightData();
-
+        Texture cookie = visibleLight.cookie;
         data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, 1);
         data.color = visibleLight.color.linear;
         data.variables.x = visibleLight.range;
@@ -58,16 +61,12 @@ public class LightManager : MonoBehaviour
         data.variables.z = 1;
         data.variables.w = 1;
 
-        if (visibleLight.type == UnityEngine.LightType.Directional)
-        {
-            AddDirectionalLightToArray(data);
-        }
-        else if (visibleLight.type == UnityEngine.LightType.Point||
 
+        if (visibleLight.type == UnityEngine.LightType.Directional)
+            AddDirectionalLightToArray(data);
+        else if (visibleLight.type == UnityEngine.LightType.Point ||
                  visibleLight.type == UnityEngine.LightType.Spot)
-        {
-            AddPointSpotLightToArray(data);
-        }
+            AddPointSpotLightToArray(data, cookie);
 
         visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
@@ -83,13 +82,9 @@ public class LightManager : MonoBehaviour
             nonVisibleLight.transform.position.z, 1);
 
         if (nonVisibleLight.type == UnityEngine.LightType.Directional)
-        {
             RemoveDirectionalLightFromArray(NVLtransform);
-        }
         else if (nonVisibleLight.type == UnityEngine.LightType.Point || nonVisibleLight.type == UnityEngine.LightType.Point)
-        {
             RemovePointSpotLightFromArray(NVLtransform);
-        }
 
         nonVisibleLight.GetComponent<LightVisibility>().isInBuffer = false;
         nonVisibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = true;
@@ -110,11 +105,12 @@ public class LightManager : MonoBehaviour
         }
     }
 
-    private void AddPointSpotLightToArray(LightData newLight)
+    private void AddPointSpotLightToArray(LightData newLight, Texture cookieTexture)
     {
         if (numActivePointSpotLights < MaxLights)
         {
             pointSpotLightsArray[numActivePointSpotLights] = newLight;
+            cookieTextures[numActiveDirectionalLights] = cookieTexture;
             numActivePointSpotLights++;
             DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
         }
@@ -173,7 +169,8 @@ public class LightManager : MonoBehaviour
         //set the data in the buffer
         directionalLightsBuffer.SetData(directionalLightsArray);
         pointSpotLightsBuffer.SetData(pointSpotLightsArray);
-        
+        lightCookiesBuffer.SetData(cookieTextures);
+
     }
 
     private void SendBufferToGPU()
@@ -181,10 +178,11 @@ public class LightManager : MonoBehaviour
         //send the data to the GPU
         Shader.SetGlobalBuffer("_DirectionalLightsBuffer", directionalLightsBuffer);
         Shader.SetGlobalBuffer("_PointSpotLightsBuffer", pointSpotLightsBuffer);
+        Shader.SetGlobalBuffer("_CookieTextureBuffer", lightCookiesBuffer);
         Shader.SetGlobalInt("_NumDirectionalLights", numActiveDirectionalLights);
         Shader.SetGlobalInt("_NumPointSpotLights", numActivePointSpotLights);
     }
-    
+
     private void DebugData(LightData[] lightDatas, string arrayName)
     {
         Debug.Log("Debugging Data from " + arrayName + ":");
@@ -192,17 +190,13 @@ public class LightManager : MonoBehaviour
         for (int i = 0; i < MaxLights; i++)
         {
             if (i < lightDatas.Length)
-            {
                 Debug.Log("Light " + (i + 1) + ": " +
                           "Position: " + lightDatas[i].position +
                           ", Color: " + lightDatas[i].color +
                           ", Range: " + lightDatas[i].variables.x +
                           ", Intensity: " + lightDatas[i].variables.y);
-            }
             else
-            {
                 Debug.Log("Light " + (i + 1) + ": Inactive");
-            }
         }
     }
 }

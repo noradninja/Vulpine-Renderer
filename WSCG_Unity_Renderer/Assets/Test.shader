@@ -25,7 +25,7 @@
             #include "UnityStandardUtils.cginc"
             #include "Lighting.cginc"
 
-            // to make internal referencing easier
+            // LightData setup to match C# struct
             struct LightData
             {
                 float3 position;
@@ -33,16 +33,18 @@
                 float range;
                 float intensity;
             };
-
+            // Raw size of our buffers for looping
             float _NumDirectionalLights;
             float _NumPointSpotLights;
+            float _NumLightCookies;
             
             // Directional Lights
             StructuredBuffer<LightData> _DirectionalLightsBuffer;
-
             // Point/Spot Lights
             StructuredBuffer<LightData> _PointSpotLightsBuffer;
-
+            // Light Cookie textures
+            StructuredBuffer<Texture2D_half> _CookieTextureBuffer;
+            
             // Shader Properties
             float _Roughness;
             float _Specular;
@@ -122,22 +124,24 @@
             // Fragment Shader
             half4 frag(v2f i) : COLOR
             {
+                // Get view dierction for lighting calcs
                 float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-
-                // Initialize accumulated color
+                // Initialize accumulated color and light cookie attenuation
                 float3 accumColor = 0;
-
+                float cookieAttenuation = 1.0;
                 // Loop over directional lights
                 for (int j = 0; j < _NumDirectionalLights; ++j)
                 {
                     // Calculate array index for the current light
                     int arrayIndex = j;
-
-                    // Extract LightData using array indices from the global buffer
+                    // Extract LightData using array indices from the global buffers
                     LightData light = _DirectionalLightsBuffer[arrayIndex];
-
+                    Texture2D_half lightCookieTexture =  _CookieTextureBuffer[arrayIndex];
                     // Add directional light contribution
                     accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(1, 1, 1), light.color.rgb, _Roughness, light.position, light.range, light.intensity, 0.0);
+                     // initialize cookie attenuation to 1.0 so we arent multiplying by zero in the case of no cookie
+                    cookieAttenuation = tex2D(lightCookieTexture, light.position.xy + float2(0.5, 0.5)).a;
+                    accumColor *= cookieAttenuation;
                 }
 
                 // Loop over point/spot lights
@@ -145,12 +149,14 @@
                 {
                     // Calculate array index for the current light
                     int arrayIndexPS = k;
-
-                    // Extract LightData using array indices from the global buffer
+                    // Extract LightData using array indices from the global buffers
                     LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
-
+                    Texture2D_half lightCookieTexture =  _CookieTextureBuffer[arrayIndexPS];
                     // Add point/spot light contribution
                     accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(0.5, 0.5, 0.5), pointSpotLight.color.rgb, _Roughness, pointSpotLight.position, pointSpotLight.range, pointSpotLight.intensity, 1.0);
+                    // initialize cookie attenuation to 1.0 so we arent multiplying by zero in the case of no cookie
+                    cookieAttenuation = tex2D(lightCookieTexture, pointSpotLight.position.xy / pointSpotLight.position.w + float2(0.5, 0.5)).a;
+                    accumColor *= cookieAttenuation;
                 }
 
                 // Assign the final color to the pixel
