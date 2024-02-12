@@ -19,11 +19,13 @@ public class LightManager : MonoBehaviour
     private const int LightDataSize = sizeof(float) * 12;
     private const int CookieDataSize = 65536; //8bpp monochrome = 1byte/pixel * width * height, we are assuming a 256x256 cookie here
 
+   
     // Separate arrays for directional and point/spot lights
     public LightData[] directionalLightsArray = new LightData[MaxLights];
     public LightData[] pointSpotLightsArray = new LightData[MaxLights];
+    public CookieTextures[] lightCookieArray = new CookieTextures[MaxLights];
     public Texture[] cookieTextures = new Texture[MaxLights];
-
+    public Texture cookiePlaceholder; //set up a placeholder for light cookies in the case of no cookie, will use a 1x1 white pixel
     private ComputeBuffer directionalLightsBuffer;
     private ComputeBuffer pointSpotLightsBuffer;
     private ComputeBuffer lightCookiesBuffer;
@@ -53,7 +55,9 @@ public class LightManager : MonoBehaviour
     {
         visibleLight.intensity = 3;
         LightData data = new LightData();
-        Texture cookie = visibleLight.cookie;
+
+        CookieTextures lightCookies = new CookieTextures();
+        lightCookies.thisLightCookie = visibleLight.cookie == null ? visibleLight.cookie : cookiePlaceholder;
         data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, 1);
         data.color = visibleLight.color.linear;
         data.variables.x = visibleLight.range;
@@ -66,7 +70,7 @@ public class LightManager : MonoBehaviour
             AddDirectionalLightToArray(data);
         else if (visibleLight.type == UnityEngine.LightType.Point ||
                  visibleLight.type == UnityEngine.LightType.Spot)
-            AddPointSpotLightToArray(data, cookie);
+            AddPointSpotLightToArray(data, lightCookies);
 
         visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
@@ -105,12 +109,12 @@ public class LightManager : MonoBehaviour
         }
     }
 
-    private void AddPointSpotLightToArray(LightData newLight, Texture cookieTexture)
+    private void AddPointSpotLightToArray(LightData newLight, CookieTextures newCookieTexture)
     {
         if (numActivePointSpotLights < MaxLights)
         {
             pointSpotLightsArray[numActivePointSpotLights] = newLight;
-            cookieTextures[numActiveDirectionalLights] = cookieTexture;
+            cookieTextures[numActiveDirectionalLights] = newCookieTexture.thisLightCookie;
             numActivePointSpotLights++;
             DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
         }

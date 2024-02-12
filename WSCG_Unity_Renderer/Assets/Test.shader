@@ -28,22 +28,25 @@
             // LightData setup to match C# struct
             struct LightData
             {
-                float3 position;
+                float4 position;
                 float4 color;
                 float range;
                 float intensity;
+            };
+            struct CookieTextures
+            {
+                sampler2D_half thisLightCookie;
             };
             // Raw size of our buffers for looping
             float _NumDirectionalLights;
             float _NumPointSpotLights;
             float _NumLightCookies;
-            
             // Directional Lights
             StructuredBuffer<LightData> _DirectionalLightsBuffer;
             // Point/Spot Lights
             StructuredBuffer<LightData> _PointSpotLightsBuffer;
             // Light Cookie textures
-            StructuredBuffer<Texture2D_half> _CookieTextureBuffer;
+            StructuredBuffer<CookieTextures> _CookieTextureBuffer;
             
             // Shader Properties
             float _Roughness;
@@ -136,11 +139,11 @@
                     int arrayIndex = j;
                     // Extract LightData using array indices from the global buffers
                     LightData light = _DirectionalLightsBuffer[arrayIndex];
-                    Texture2D_half lightCookieTexture =  _CookieTextureBuffer[arrayIndex];
+                    CookieTextures lightCookieTexture = _CookieTextureBuffer[arrayIndex];
                     // Add directional light contribution
                     accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(1, 1, 1), light.color.rgb, _Roughness, light.position, light.range, light.intensity, 0.0);
                      // initialize cookie attenuation to 1.0 so we arent multiplying by zero in the case of no cookie
-                    cookieAttenuation = tex2D(lightCookieTexture, light.position.xy + float2(0.5, 0.5)).a;
+                    cookieAttenuation = tex2D(lightCookieTexture.thisLightCookie, light.position.xy + float2(0.5, 0.5)).a;
                     accumColor *= cookieAttenuation;
                 }
 
@@ -151,11 +154,11 @@
                     int arrayIndexPS = k;
                     // Extract LightData using array indices from the global buffers
                     LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
-                    Texture2D_half lightCookieTexture =  _CookieTextureBuffer[arrayIndexPS];
+                    CookieTextures lightCookieTexture =  _CookieTextureBuffer[arrayIndexPS];
                     // Add point/spot light contribution
                     accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(0.5, 0.5, 0.5), pointSpotLight.color.rgb, _Roughness, pointSpotLight.position, pointSpotLight.range, pointSpotLight.intensity, 1.0);
                     // initialize cookie attenuation to 1.0 so we arent multiplying by zero in the case of no cookie
-                    cookieAttenuation = tex2D(lightCookieTexture, pointSpotLight.position.xy / pointSpotLight.position.w + float2(0.5, 0.5)).a;
+                    cookieAttenuation = tex2D(lightCookieTexture.thisLightCookie, pointSpotLight.position.xy / pointSpotLight.position.w + float2(0.5, 0.5)).a;
                     accumColor *= cookieAttenuation;
                 }
 
