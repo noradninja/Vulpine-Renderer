@@ -24,7 +24,7 @@ public class LightManager : MonoBehaviour
     private const int MaxLightsTotal = MaxDirectionalLights + MaxPointSpotLights; //just in case we need it at some point
     //3 vec4 == 12 floats * 4 bytes == 48 bytes * 8 lights == 384 bytes/frame for 8 lights total 
     private const int LightDataSize = sizeof(float) * 12;
-    //4 vec4 == 16 floats * 4 bytes == 64 bytes bytes/frame for 6 cookies total 
+    //4 vec4 == 16 floats * 4 bytes == 64 bytes bytes/frame for 4 cookies total 
     private const int atlasDataSize = sizeof(float) * 16;
     private ComputeBuffer directionalLightsBuffer;
     private ComputeBuffer pointSpotLightsBuffer;
