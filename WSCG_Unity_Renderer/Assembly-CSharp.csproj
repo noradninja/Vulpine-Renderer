@@ -65,7 +65,7 @@
     <Compile Include="Assets\Scripts\Managers\Rendering\LightVisibility.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\ShaderController.cs" />
     <None Include="Assets\LightingCalculations.cginc" />
-    <None Include="Assets\LightingFastest.cginc" />
+    <None Include="Assets\Lighting.cginc" />
     <None Include="Assets\Test.shader" />
     <Reference Include="UnityEditor.StandardEvents">
       <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/WSCG_Unity_Renderer/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
