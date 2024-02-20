@@ -3,7 +3,7 @@
     Properties
     {
         _MainTex ("Base (RGB)", 2D) = "white" { }
-        _Roughness ("Smoothness", Range(0,1)) = 0.5
+        _Roughness ("Roughness", Range(0,1)) = 0.5
         _Specular ("Specular Intensity", Range(0, 1)) = 0.5
     }
 
@@ -23,32 +23,26 @@
             #include "UnityStandardConfig.cginc"
             #include "UnityPBSLighting.cginc"
             #include "UnityStandardUtils.cginc"
-            #include "Lighting.cginc"
+            #include "LightingFastest.cginc"
 
-            // LightData setup to match C# struct
+            // to make internal referencing easier
             struct LightData
             {
-                float4 position;
+                float3 position;
                 float4 color;
                 float range;
                 float intensity;
             };
-            // CookieTexture setup to match C# struct
-            struct CookieTextures
-            {
-                sampler2D thisLightCookie;
-            };
-            // Raw size of our buffers for looping
+
             float _NumDirectionalLights;
             float _NumPointSpotLights;
-            float _NumLightCookies;
+            
             // Directional Lights
             StructuredBuffer<LightData> _DirectionalLightsBuffer;
+
             // Point/Spot Lights
             StructuredBuffer<LightData> _PointSpotLightsBuffer;
-            // Light Cookie textures
-            StructuredBuffer<CookieTextures> _CookieTextureBuffer;
-            
+
             // Shader Properties
             float _Roughness;
             float _Specular;
@@ -74,80 +68,47 @@
             v2f vert(appdata v)
             {
                 v2f o;
-                float4x4 modelMatrix = unity_ObjectToWorld;
                 float4x4 modelMatrixInverse = unity_WorldToObject;
-                
-                o.worldPos = mul(modelMatrix, v.vertex).xyz;
+
+                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 o.normal = mul(float4(v.normal, 0.0), modelMatrixInverse).xyz;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.color = v.color * 0.5;
                 return o;
             }
 
-            float SpecularTerm(float3 lightDir, float3 viewDir, float3 normal, float shininess)
-            {
-                float3 H = normalize(lightDir + viewDir);
-                float spec = pow(max(0.0, dot(H, normal)), shininess);
-                return spec;
-            }
-
-            
-            // Lambert Diffuse and Blinn-Phong Specular Lighting Calculation
-            float4 LambertDiffuseAndBlinnPhongSpecular(float3 normal, float3 viewDir, float3 worldPos, float3 albedo, float3 lightColor, float shininess, float3 lightPos, float lightRange, float lightIntensity, float lightType)
-            {
-                float3 normalDirection = normalize(normal);
-                float3 viewDirection = normalize(viewDir);
-                float3 lightDirection;
-                float attenuation;
-
-                if (0.0 == lightType) // directional light?
-                {
-                    attenuation = 1.0; // no attenuation
-                    lightDirection = normalize(lightPos);
-                }
-                else // point or spot light
-                {
-                    float3 vertexToLightSource = lightPos - worldPos;
-                    float distance = length(vertexToLightSource);
-                    attenuation = 1.0 / distance; // linear attenuation 
-                    lightDirection = normalize(vertexToLightSource);
-                }
-
-                float3 ambientLighting = UNITY_LIGHTMODEL_AMBIENT * albedo;
-
-                float diff = LambertTerm(lightDirection, normalDirection);
-                float spec = SpecularTerm(lightDirection, viewDirection, normalDirection, shininess);
-
-                float3 diffuseReflection = attenuation * lightColor * albedo * diff;
-
-                float3 specularReflection = attenuation * lightColor * _Specular * spec;
-
-                return float4(ambientLighting + diffuseReflection + specularReflection, 1.0);
-            }
-
-            sampler2D_half currentLightCookie;
-            
             // Fragment Shader
             half4 frag(v2f i) : COLOR
             {
-                // Get view dierction for lighting calcs
                 float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-                // Initialize accumulated color and light cookie attenuation
+
+                // Initialize accumulated color
                 float3 accumColor = 0;
-                float cookieAttenuation = 1.0;
+
                 // Loop over directional lights
                 for (int j = 0; j < _NumDirectionalLights; ++j)
                 {
                     // Calculate array index for the current light
                     int arrayIndex = j;
-                    // Extract LightData using array indices from the global buffers
+
+                    // Extract LightData using array indices from the global buffer
                     LightData light = _DirectionalLightsBuffer[arrayIndex];
-                    currentLightCookie = _CookieTextureBuffer[arrayIndex].thisLightCookie;
+
                     // Add directional light contribution
-                    accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(1, 1, 1), light.color.rgb, _Roughness, light.position, light.range, light.intensity, 0.0);
-                     // initialize cookie attenuation to 1.0 so we arent multiplying by zero in the case of no cookie
-                    cookieAttenuation = (currentLightCookie, light.position.xy + float2(0.5, 0.5));
-                    accumColor *= cookieAttenuation;
+                    accumColor += LightAccumulation(
+                        i.normal,
+                        viewDir,
+                        float3(0.5,0.5,0.5),
+                        light.color.rgb * _Specular,
+                        _Roughness,
+                        i.worldPos,
+                        light.position,
+                        light.color,
+                        light.range,
+                        light.intensity,
+                        0.0,
+                        0.0
+                        );
                 }
 
                 // Loop over point/spot lights
@@ -155,16 +116,26 @@
                 {
                     // Calculate array index for the current light
                     int arrayIndexPS = k;
-                    // Extract LightData using array indices from the global buffers
-                    LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
-                    currentLightCookie =  _CookieTextureBuffer[arrayIndexPS].thisLightCookie;
-                    // Add point/spot light contribution
-                    accumColor += LambertDiffuseAndBlinnPhongSpecular(i.normal, viewDir, i.worldPos, float3(0.5, 0.5, 0.5), pointSpotLight.color.rgb, _Roughness, pointSpotLight.position, pointSpotLight.range, pointSpotLight.intensity, 1.0);
-                    // initialize cookie attenuation to 1.0 so we arent multiplying by zero in the case of no cookie
-                    cookieAttenuation = (currentLightCookie, pointSpotLight.position.xy / pointSpotLight.position.w + float2(0.5, 0.5));
-                    accumColor *= cookieAttenuation;
-                }
 
+                    // Extract LightData using array indices from the global buffer
+                    LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
+
+                    // Add point/spot light contribution
+                    accumColor += LightAccumulation(
+                        i.normal,
+                        viewDir,
+                        float3(0.5,0.5,0.5),
+                        pointSpotLight.color.rgb * _Specular,
+                        _Roughness,
+                        i.worldPos,
+                        pointSpotLight.position,
+                        pointSpotLight.color,
+                        pointSpotLight.range,
+                        pointSpotLight.intensity,
+                        2.0,
+                        26
+                        );
+                }
                 // Assign the final color to the pixel
                 return float4(accumColor, 1.0);
             }
