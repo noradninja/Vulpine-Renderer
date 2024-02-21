@@ -49,9 +49,8 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
 
     if (lightType == 0.0) // directional light
     {
-        lightDir = normalize(lightPosition);
-        float distance = length(worldPosition - lightPosition);
-        intensity *= saturate(1.0 - distance / range); // Linear attenuation
+        lightDir = normalize(-lightPosition);
+       
     }
     else // point/spot light
     {
@@ -64,10 +63,10 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
         if (lightType == 1.0) // spot light
         {
             // Calculate the spotlight cone
-            float spotFactor = dot(normalize(lightDir), normalize(lightPosition));
-            float spotAttenuation = smoothstep(spotAngle, spotAngle + 0.1, spotFactor);
+            float spotFactor = dot(normalize(-lightDir), normalize(lightPosition));
+            float spotAttenuation = smoothstep(spotAngle, spotAngle + 0.5, 0.5);
             // You can adjust the 0.1 value for a smoother edge
-            attenuation = spotAttenuation;
+            attenuation = 1; //spotAttenuation;
         }
 
         intensity *= attenuation;
