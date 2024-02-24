@@ -144,7 +144,7 @@ QualitySettings:
     excludedTargetPlatforms: []
   - serializedVersion: 2
     name: Very High
-    pixelLightCount: 8
+    pixelLightCount: 10
     shadows: 1
     shadowResolution: 0
     shadowProjection: 0
@@ -156,13 +156,13 @@ QualitySettings:
     shadowmaskMode: 0
     blendWeights: 1
     textureQuality: 0
-    anisotropicTextures: 1
-    antiAliasing: 2
+    anisotropicTextures: 2
+    antiAliasing: 4
     softParticles: 1
     softVegetation: 1
     realtimeReflectionProbes: 0
     billboardsFaceCameraPosition: 0
-    vSyncCount: 2
+    vSyncCount: 0
     lodBias: 1.5
     maximumLODLevel: 0
     streamingMipmapsActive: 0

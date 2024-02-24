@@ -82,7 +82,7 @@ fixed3 GGXSpecular(float3 viewDir, float3 normal, float3 lightColor)
     float D = alphaSquared / (UNITY_PI * pow(NdotH * NdotH * (alphaSquared - 1) + 1, 2));
 
     // Fresnel-Schlick approximation
-    float3 F = lightColor + (1 - lightColor) * pow(1 - dot(halfVec, viewDir), 5);
+    float3 F = lightColor + (1 - lightColor) * pow(1 - dot(halfVec, viewDir), );
 
     // GGX reflection model
     return D * F;

@@ -63,7 +63,7 @@ public class LightManager : MonoBehaviour
 
     public void OnVisible(Light visibleLight)
     {
-        visibleLight.intensity = 3;
+        visibleLight.intensity = 10;
         LightData data = new LightData();
         
        

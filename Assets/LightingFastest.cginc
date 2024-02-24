@@ -1,9 +1,18 @@
 ﻿// LightingFastest.cginc
 
-// Lambertian Diffuse Function
-float LambertDiffuse(float3 normal, float3 lightDir)
+// Lambertian Diffuse Term (Disney)
+float3 DisneyDiffuse(float nl, float3 color)
 {
-    return max(0.0, dot(normal, lightDir));
+    float3 baseColor = color.rgb;
+
+    // Lambert diffuse term
+    float diffuse = max(0.0, nl);
+
+    // Energy-conserving adjustment
+    float3 adjustedDiffuse = diffuse * (1.0 + (color.rgb / 3.14));
+
+    // Apply base color
+    return adjustedDiffuse * baseColor;
 }
 
 // GGX Specular Reflection Function
@@ -58,7 +67,7 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
         float distance = length(vertexToLightSource);
         float attenuation = 1.0 / (1.0 + 0.1 * distance + 0.01 * distance * distance);
 
-        lightDir = -normalize(vertexToLightSource);
+        lightDir = normalize(vertexToLightSource);
 
         if (lightType == 1.0) // spot light
         {
@@ -72,8 +81,8 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
         intensity *= attenuation;
     }
 
-    float diff = LambertDiffuse(normal, -lightDir);
-    float spec = GGXSpecular(normal, viewDir, -lightDir, roughness);
+    float diff = DisneyDiffuse(dot(normal,lightDir), albedo);
+    float spec = GGXSpecular(normal, viewDir, lightDir, roughness);
     float3 fresnel = SchlickFresnel(specularColor, normalize(viewDir + normal), viewDir);
     return albedo * (diff + spec) * lightColor * fresnel * intensity;
 }

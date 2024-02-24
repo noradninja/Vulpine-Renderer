@@ -66,19 +66,18 @@
     <Compile Include="Assets\Scripts\Managers\Rendering\ShaderController.cs" />
     <None Include="Assets\LightingCalculations.cginc" />
     <None Include="Assets\LightingFastest.cginc" />
-    <None Include="Assets\Lighting.cginc" />
     <None Include="Assets\Test.shader" />
     <Reference Include="UnityEditor.StandardEvents">
-      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/WSCG_Unity_Renderer/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
+      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/Library/ScriptAssemblies/UnityEditor.StandardEvents.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/WSCG_Unity_Renderer/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.PackageManagerUI.Editor">
-      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/WSCG_Unity_Renderer/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
+      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/WSCG_Unity_Renderer/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>E:/PSVITA/Projects/WSCG_Unity_Renderer/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AIModule">
       <HintPath>C:/Program Files/Unity2018/Editor/Data/PlaybackEngines/PSP2Player/Tools/UnityEngine.AIModule.dll</HintPath>
