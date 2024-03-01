@@ -1,57 +1,13 @@
 ﻿// LightingFastest.cginc
 
-// Lambertian Diffuse Term (Disney)
-float3 DisneyDiffuse(float nl, float3 color)
-{
-    float3 baseColor = color.rgb;
-
-    // Lambert diffuse term
-    float diffuse = max(0.0, nl);
-
-    // Energy-conserving adjustment
-    float3 adjustedDiffuse = diffuse * (1.0 + (color.rgb / 3.14));
-
-    // Apply base color
-    return adjustedDiffuse * baseColor;
-}
-
-// GGX Specular Reflection Function
-float GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float roughness, float specularColor)
-{
-    float3 h = normalize(viewDir + lightDir);
-    float nh = max(0.0, dot(normal, h));
-    float nv = max(0.0, dot(normal, viewDir));
-    float nl = max(0.0, dot(normal, lightDir));
-
-    float roughnessSq = roughness * roughness;
-    float a = nh * nh * (roughnessSq - 1.0) + 1.0;
-
-    // Combine the terms before division
-    float invDenominator = 1.0 / (3.14 * a * a);
-
-    float D = roughnessSq * invDenominator;
-
-    float G1 = (2.0 * nh) * invDenominator;
-    float G = min(1.0, min(G1, 2.0 * nl / nh));
-
-    //float3 F = ;
-
-    // Avoid division by zero by adding a small value
-    float denominator = 4.0 * nv * nl + 0.001;
-
-    // Multiply instead of dividing
-    return (D * G) * rsqrt(denominator);
-}
-
-
-
+#include "LightingCalculations.cginc"
+float3 lightDir;
+float attenuation;
 
 float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 specularColor, float roughness,
                          float3 worldPosition, float3 lightPosition, float3 lightColor, float range, float intensity,
                          float lightType, float spotAngle)
 {
-    float3 lightDir;
-    float attenuation = 1.0;
     if (lightType == 0.0) // directional light
     {
         lightDir = normalize(lightPosition);
@@ -61,15 +17,15 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
         float3 vertexToLightSource = lightPosition - worldPosition;
         half lightDst = dot(vertexToLightSource, vertexToLightSource);
         lightDir = normalize(vertexToLightSource);
-        half normalizedDist = lightDst / pow(range,0.25);
+        half normalizedDist = lightDst / pow(range,0.75);
         half fallOff = saturate(1.0 / (1.0 + 25.0 * normalizedDist * normalizedDist) * saturate((1 - normalizedDist) * 5.0));
                 
-        attenuation = fallOff; //spotAttenuation;
+        attenuation = fallOff;
         intensity *= attenuation;
     }
-
+    //calculate the diffuse and specular terms
     float diff = DisneyDiffuse(dot(normal,lightDir), albedo);
-    float spec = GGXSpecular(normal, viewDir, lightDir, roughness, specularColor);
-    
-    return albedo * (diff + spec) * lightColor * intensity;
+    float spec = GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, specularColor);
+    //return the beauty pass
+    return (albedo + .5) * (diff + spec) * lightColor * intensity;
 }

@@ -66,6 +66,7 @@
                 float3 worldPos : TEXCOORD0;
                 float3 normal : TEXCOORD1;
                 float2 uv: TEXCOORD2;
+                
             };
 
             // Vertex Shader
@@ -90,9 +91,10 @@
                 // Sample the albedo and normal maps
                 float3 albedo = tex2D(_MainTex, i.uv).rgb;
                 float3 vertNormal = normalize(i.normal);
-                float3 normalMap = normalize(UnpackNormal(tex2D(_NormalMap, i.uv)));
+                float4 normalMap = tex2D(_NormalMap, i.uv);
+                float3 normalized = UnpackNormal(normalMap);
                 // Apply normal mapping
-                float3 normal = vertNormal;//(vertNormal, normalMap, _Specular);
+                float3 normal = vertNormal;//nomalized * vertNormal; // <-------------THIS IS OBVIOUSLY WRONG, BUT OBJECTIVELY COOL LOOKING ANYWAY
                 // Loop over directional lights
                 for (int j = 0; j < _NumDirectionalLights; ++j)
                 {
