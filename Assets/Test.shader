@@ -2,7 +2,8 @@
 {
     Properties
     {
-        _MainTex ("Base (RGB)", 2D) = "white" { }
+        _MainTex ("Albedo (RGB)", 2D) = "white" { }
+        _NormalMap ("Normal Map", 2D) = "bump" { }
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Specular ("Specular Intensity", Range(0, 1)) = 0.5
     }
@@ -46,13 +47,15 @@
             // Shader Properties
             float _Roughness;
             float _Specular;
-
+            sampler2D_half _MainTex, _NormalMap;
+            
             // Struct for Vertex Input
             struct appdata
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
                 float4 color : COLOR;
+                float2 uv: TEXCOORD0;
             };
 
             // Struct for Vertex Output
@@ -62,18 +65,18 @@
                 float4 color : COLOR;
                 float3 worldPos : TEXCOORD0;
                 float3 normal : TEXCOORD1;
+                float2 uv: TEXCOORD2;
             };
 
             // Vertex Shader
             v2f vert(appdata v)
             {
                 v2f o;
-                float4x4 modelMatrixInverse = unity_WorldToObject;
-
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-                o.normal = mul(float4(v.normal, 0.0), modelMatrixInverse).xyz;
+                o.normal = mul(v.normal, unity_WorldToObject);
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.color = v.color * 0.5;
+                o.uv = v.uv;
                 return o;
             }
 
@@ -84,7 +87,12 @@
 
                 // Initialize accumulated color
                 float3 accumColor = 0;
-
+                // Sample the albedo and normal maps
+                float3 albedo = tex2D(_MainTex, i.uv).rgb;
+                float3 vertNormal = normalize(i.normal);
+                float3 normalMap = normalize(UnpackNormal(tex2D(_NormalMap, i.uv)));
+                // Apply normal mapping
+                float3 normal = vertNormal;//(vertNormal, normalMap, _Specular);
                 // Loop over directional lights
                 for (int j = 0; j < _NumDirectionalLights; ++j)
                 {
@@ -96,9 +104,9 @@
 
                     // Add directional light contribution
                     accumColor += LightAccumulation(
-                        i.normal,
+                        normal,
                         viewDir,
-                        float3(0.5,0.5,0.5),
+                        albedo,
                         light.color.rgb * _Specular,
                         _Roughness,
                         i.worldPos,
@@ -122,7 +130,7 @@
 
                     // Add point/spot light contribution
                     accumColor += LightAccumulation(
-                        i.normal,
+                        normal,
                         viewDir,
                         float3(0.5,0.5,0.5),
                         pointSpotLight.color.rgb * _Specular,
@@ -133,7 +141,7 @@
                         pointSpotLight.range,
                         pointSpotLight.intensity,
                         2.0,
-                        26
+                        45
                         );
                 }
                 // Assign the final color to the pixel

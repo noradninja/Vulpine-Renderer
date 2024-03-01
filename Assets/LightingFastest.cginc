@@ -33,8 +33,9 @@ float GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float roughnes
 
     float G1 = (2.0 * nh) * invDenominator;
     float G = min(1.0, min(G1, 2.0 * nl / nh));
+    float F0 = lerp(0.04, 0.97, roughness);
+    float F = F0 + (1 - F0) * pow(1 - dot(viewDir, reflect(lightDir, normalize(float3(0, 1, 0)))), 5);
 
-    float3 F = 0.04 + 0.96 * pow(1.0 - dot(lightDir, h), 5.0);
 
     // Avoid division by zero by adding a small value
     float denominator = 4.0 * nv * nl + 0.001;
@@ -43,46 +44,32 @@ float GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float roughnes
     return (D * G * F) * rsqrt(denominator);
 }
 
-// Schlick's Approximated Fresnel Reflection
-float3 SchlickFresnel(float3 specularColor, float3 h, float3 viewDir)
-{
-    return specularColor + (1.0 - specularColor) * pow(1.0 - dot(viewDir, h), 2.0);
-}
-
-
+//accumulate light in a single step
 float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 specularColor, float roughness,
                          float3 worldPosition, float3 lightPosition, float3 lightColor, float range, float intensity,
                          float lightType, float spotAngle)
 {
     float3 lightDir;
-
+    float attenuation = 1.0;
     if (lightType == 0.0) // directional light
     {
-        lightDir = normalize(-lightPosition);
-       
+        lightDir = normalize(lightPosition);
     }
     else // point/spot light
     {
         float3 vertexToLightSource = lightPosition - worldPosition;
-        float distance = length(vertexToLightSource);
-        float attenuation = 1.0 / (1.0 + 0.1 * distance + 0.01 * distance * distance);
-
+        half lightDst = dot(vertexToLightSource, vertexToLightSource);
         lightDir = normalize(vertexToLightSource);
-
-        if (lightType == 1.0) // spot light
-        {
-            // Calculate the spotlight cone
-            float spotFactor = dot(normalize(-lightDir), normalize(lightPosition));
-            float spotAttenuation = smoothstep(spotAngle, spotAngle + 0.5, 0.5);
-            // You can adjust the 0.1 value for a smoother edge
-            attenuation = 1; //spotAttenuation;
-        }
-
+        half normalizedDist = lightDst / pow(range,0.25); //range needs to be squared because the light distance is also squared -> cheaper computation
+        half fallOff = saturate(1.0 / (1.0 + 25.0 * normalizedDist * normalizedDist) * saturate((1 - normalizedDist) * 5.0));
+        //
+        attenuation = fallOff; //spotAttenuation;
+        //
         intensity *= attenuation;
     }
 
     float diff = DisneyDiffuse(dot(normal,lightDir), albedo);
     float spec = GGXSpecular(normal, viewDir, lightDir, roughness);
-    float3 fresnel = SchlickFresnel(specularColor, normalize(viewDir + normal), viewDir);
-    return albedo * (diff + spec) * lightColor * fresnel * intensity;
+    
+    return albedo * (diff + spec) * lightColor * intensity;
 }
