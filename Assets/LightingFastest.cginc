@@ -17,7 +17,7 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
         float3 vertexToLightSource = lightPosition - worldPosition;
         half lightDst = dot(vertexToLightSource, vertexToLightSource);
         lightDir = normalize(vertexToLightSource);
-        half normalizedDist = lightDst / pow(range,0.75);
+        half normalizedDist = lightDst / range * 6;
         half fallOff = saturate(1.0 / (1.0 + 25.0 * normalizedDist * normalizedDist) * saturate((1 - normalizedDist) * 5.0));
                 
         attenuation = fallOff;
@@ -25,7 +25,7 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
     }
     //calculate the diffuse and specular terms
     float diff = DisneyDiffuse(dot(normal,lightDir), albedo);
-    float spec = GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, specularColor);
+    float3 spec = GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, lightColor);
     //return the beauty pass
-    return (albedo + .5) * (diff + spec) * lightColor * intensity;
+    return (albedo + 0.25) * lightColor * intensity * (diff + spec);
 }

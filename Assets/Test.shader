@@ -54,6 +54,7 @@
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+                float4 tangent : TANGENT;
                 float4 color : COLOR;
                 float2 uv: TEXCOORD0;
             };
@@ -65,7 +66,8 @@
                 float4 color : COLOR;
                 float3 worldPos : TEXCOORD0;
                 float3 normal : TEXCOORD1;
-                float2 uv: TEXCOORD2;
+                float4 tangent : TEXCOORD2;
+                float2 uv: TEXCOORD3;
                 
             };
 
@@ -75,6 +77,7 @@
                 v2f o;
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 o.normal = mul(v.normal, unity_WorldToObject);
+                o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.color = v.color * 0.5;
                 o.uv = v.uv;
@@ -90,11 +93,14 @@
                 float3 accumColor = 0;
                 // Sample the albedo and normal maps
                 float3 albedo = tex2D(_MainTex, i.uv).rgb;
-                float3 vertNormal = normalize(i.normal);
-                float4 normalMap = tex2D(_NormalMap, i.uv);
-                float3 normalized = UnpackNormal(normalMap);
+                float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv.xy));
+                float3 binormal = cross(i.normal, i.tangent.xyz) * (i.tangent.w * unity_WorldTransformParams.w);
+
                 // Apply normal mapping
-                float3 normal = vertNormal;//nomalized * vertNormal; // <-------------THIS IS OBVIOUSLY WRONG, BUT OBJECTIVELY COOL LOOKING ANYWAY
+                float3 normal = normalize(
+		                        normalMap.x * i.tangent +
+		                        normalMap.y * binormal +
+		                        normalMap.z * i.normal);
                 // Loop over directional lights
                 for (int j = 0; j < _NumDirectionalLights; ++j)
                 {

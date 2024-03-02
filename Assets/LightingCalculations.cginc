@@ -39,7 +39,7 @@ float GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 positio
     // Half vector calculation
     float3 halfVec = normalize(viewDir + normalize(lightPosition - position));
     // Fresnel-Schlick approximation
-    float3 F = lightColor + (1 - lightColor) * pow(1 - dot(halfVec, viewDir), 5);
+    float3 F = lightColor + (1 - lightColor) * pow(1 - dot(halfVec, viewDir), 4);
 
     // Avoid division by zero by adding a small value
     float denominator = 4.0 * nv * nl + 0.001;
