@@ -5,7 +5,7 @@
         _MainTex ("Albedo (RGB)", 2D) = "white" { }
         _NormalMap ("Normal Map", 2D) = "bump" { }
         _Roughness ("Roughness", Range(0,1)) = 0.5
-        _Specular ("Specular Intensity", Range(0, 1)) = 0.5
+        _Metalness ("Metalness", Range(0, 1)) = 0.5
     }
 
     SubShader
@@ -39,7 +39,7 @@
 
             // Shader Properties
             float _Roughness;
-            float _Specular;
+            float _Metalness;
             sampler2D _MainTex, _NormalMap;
             
             // Struct for Vertex Input
@@ -102,6 +102,7 @@
 		                        normalMap.x * i.tangent +
 		                        normalMap.y * binormal +
 		                        normalMap.z * i.normal);
+                _Metalness += 0.01; //so we arent multing by zero
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
                 {
@@ -116,7 +117,7 @@
                         normal,
                         viewDir,
                         albedo,
-                        light.color.rgb * _Specular,
+                        light.color.rgb * _Metalness,
                         _Roughness,
                         i.worldPos,
                         light.position,
@@ -142,7 +143,7 @@
                         normal,
                         viewDir,
                         float3(0.5,0.5,0.5),
-                        pointSpotLight.color.rgb * _Specular,
+                        pointSpotLight.color.rgb * _Metalness,
                         _Roughness,
                         i.worldPos,
                         pointSpotLight.position,

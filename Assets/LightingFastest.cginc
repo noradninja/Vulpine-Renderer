@@ -26,8 +26,10 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
                          float3 worldPosition, float3 lightPosition, float3 lightColor, float range, float intensity,
                          float lightType, float spotAngle)
 {
-    CreateIndirectLight(normal, viewDir);
     
+    
+    CreateIndirectLight(normal, viewDir);
+    half fallOff = 1.0;
     if (lightType < 0.5) // directional light
     {
         lightDir = normalize(lightPosition);
@@ -38,15 +40,14 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
         half lightDst = dot(vertexToLightSource, vertexToLightSource);
         lightDir = normalize(vertexToLightSource);
         half normalizedDist = lightDst / range * range;
-        half fallOff = saturate(1.0 / (1.0 + 25.0 * normalizedDist * normalizedDist) * saturate((1 - normalizedDist) * 5.0));
-
-        intensity *= fallOff;
+        fallOff = saturate(1.0 / (1.0 + 25.0 * normalizedDist * normalizedDist) * saturate((1 - normalizedDist) * 5.0));
     }
 
     // Calculate the diffuse and specular terms
     float diff = DisneyDiffuse(dot(normal, lightDir), albedo);
-    float3 spec = RetroreflectiveSpecular(viewDir,normal,lightColor, roughness);
-                //GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, specularColor);
+    float3 spec =//AnisotropicSpecular(viewDir, worldPosition, normal, lightPosition, lightColor, roughness);
+                //RetroreflectiveSpecular(viewDir,normal,lightColor, roughness);
+                GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, specularColor);
 
     // Fresnel-Schlick approximation for reflection based on the roughness
     float3 F0 = specularColor;
@@ -59,7 +60,7 @@ float3 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float3 sp
     
     // Apply environment lighting using Unity 2018 built-in ambient lighting values and skybox light
     float3 ambientLight = UNITY_LIGHTMODEL_AMBIENT.rgb;
-    float3 combinedColor = albedo * ambientLight * (combinedLight + skyColor * F) * intensity;
+    float3 combinedColor = albedo * ambientLight * (combinedLight + skyColor * F) * fallOff;
 
     return combinedColor;
 }

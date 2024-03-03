@@ -96,17 +96,19 @@ Material:
     - _Glossiness: 0.385
     - _GlossyReflections: 1
     - _Metallic: 0.8
+    - _Metalness: 0.5
     - _Mode: 0
     - _Occlusion: 0.782
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Roughness: 0.131
+    - _Roughness: 0.5
     - _Shininess: 0.01
     - _SmoothnessTextureChannel: 0
     - _Specular: 1
     - _SpecularCalculation: 0
     - _SpecularHighlights: 1
     - _SpecularInVertex: 0
+    - _SpecularTerm: 1
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
