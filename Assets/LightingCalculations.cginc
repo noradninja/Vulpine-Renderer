@@ -65,25 +65,31 @@ fixed3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDi
     return absorptionColor * scatteringColor * diffusion * diffuseTerm;
 }
 
-fixed3 AnisotropicSpecular(float3 viewDir, float3 position, float3 lightPosition, float3 lightColor)
+float3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 lightPosition, float3 lightColor, float roughness)
 {
-    // Beckmann distribution parameters
-    float roughnessX = 0.2; // Adjust as needed
-    float roughnessY = 0.5; // Adjust as needed
+    // Compute light direction
+    float3 lightDir = normalize(lightPosition - position);
 
-    // Half vector calculation
-    float3 halfVec = normalize(viewDir + normalize(lightPosition - position));
+    // Compute half vector
+    float3 halfVec = normalize(viewDir + lightDir);
+
+    // Add a small offset to roughness to prevent division by zero
+    roughness = roughness + 0.0001;
 
     // Beckmann distribution term
-    float exponent = (halfVec.x * halfVec.x) / (roughnessX * roughnessX) + (halfVec.y * halfVec.y) / (roughnessY * roughnessY);
-    float D = exp(-exponent) / (UNITY_PI * roughnessX * roughnessY * roughnessX * roughnessY * pow(halfVec.z, 4));
+    float dotNH = dot(normal, halfVec);
+    float exponent = (dotNH * dotNH) / (roughness) + ((1.0 - dotNH * dotNH) / (roughness));
+    float D = exp(-exponent) / (3.14159  * roughness * roughness * pow(dotNH, 4));
 
     // Fresnel-Schlick approximation
-    float3 F = lightColor + (1 - lightColor) * pow(1 - dot(halfVec, viewDir), 5);
+    float3 F = lightColor * pow(1 - dot(halfVec, viewDir), 5);
 
     // Anisotropic reflection model
     return D * F;
 }
+
+
+
 
 
 fixed3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float3 lightColor, float roughness)
