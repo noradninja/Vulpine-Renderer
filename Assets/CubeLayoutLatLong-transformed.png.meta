@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ccf9ae2d32732ba479646b0b3fb2e7a9
+guid: c0009afb3f7a113419b312ed33df7c3c
 TextureImporter:
   fileIDToRecycleName:
     8900000: generatedCubemap
@@ -25,14 +25,14 @@ TextureImporter:
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   grayScaleToAlpha: 0
-  generateCubemap: 6
+  generateCubemap: 2
   cubemapConvolution: 1
   seamlessCubemap: 1
   textureFormat: 1
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 2
+    filterMode: -1
     aniso: -1
     mipBias: -100
     wrapU: -1
@@ -61,7 +61,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 2
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 512
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -72,7 +72,7 @@ TextureImporter:
     androidETC2FallbackOverride: 0
   - serializedVersion: 2
     buildTarget: Standalone
-    maxTextureSize: 512
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -83,7 +83,7 @@ TextureImporter:
     androidETC2FallbackOverride: 0
   - serializedVersion: 2
     buildTarget: PSP2
-    maxTextureSize: 512
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1

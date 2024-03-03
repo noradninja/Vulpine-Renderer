@@ -19,8 +19,8 @@ public class LightManager : MonoBehaviour
         public Vector4 quad3;
     }
    
-    private const int MaxPointSpotLights = 6;
-    private const int MaxDirectionalLights = 2;
+    private const int MaxPointSpotLights = 8;
+    private const int MaxDirectionalLights = 4;
     private const int MaxLightsTotal = MaxDirectionalLights + MaxPointSpotLights; //just in case we need it at some point
     //3 vec4 == 12 floats * 4 bytes == 48 bytes * 8 lights == 384 bytes/frame for 8 lights total 
     private const int LightDataSize = sizeof(float) * 12;
@@ -122,7 +122,7 @@ public class LightManager : MonoBehaviour
         if (numActivePointSpotLights < MaxPointSpotLights)
         {
             pointSpotLightsArray[numActivePointSpotLights] = newLight;
-            pointSpotCookieTextures[numActivePointSpotLights] = pointSpotLight.cookie != null ? pointSpotLight.cookie : cookiePlaceholder;
+            //pointSpotCookieTextures[numActivePointSpotLights] = pointSpotLight.cookie != null ? pointSpotLight.cookie : cookiePlaceholder;
             numActivePointSpotLights++;
             DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
         }
@@ -182,7 +182,7 @@ public class LightManager : MonoBehaviour
         directionalLightsBuffer.SetData(directionalLightsArray);
         pointSpotLightsBuffer.SetData(pointSpotLightsArray);
         //pack 4 pointSpot cookies into an atlas
-        atlasTextures(pointSpotCookieTextures, 512, 512);
+        //atlasTextures(pointSpotCookieTextures, 512, 512);
     }
 
     private void SendBufferToGPU()
@@ -194,9 +194,9 @@ public class LightManager : MonoBehaviour
         Shader.SetGlobalInt("_NumDirectionalLights", numActiveDirectionalLights);
         Shader.SetGlobalInt("_NumPointSpotLights", numActivePointSpotLights);
         //send the packed textures to a pair of global slots on the GPU
-        Shader.SetGlobalTexture("_pointSpotAtlas", pointSpotAtlas);
+        //Shader.SetGlobalTexture("_pointSpotAtlas", pointSpotAtlas);
         //we also need the UV's
-        Shader.SetGlobalBuffer("_pointSpotAtlasBuffer", pointSpotAtlasBuffer);
+       // Shader.SetGlobalBuffer("_pointSpotAtlasBuffer", pointSpotAtlasBuffer);
     }
     
     private void atlasTextures(Texture[] texturesToAtlas, int atlasWidth, int atlasHeight)

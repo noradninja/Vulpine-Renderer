@@ -88,7 +88,6 @@ public class LightVisibility : MonoBehaviour
             {
                 isVisible = true;
                 _lightManager.OnVisible(_thisLight);
-
             }
         }
 

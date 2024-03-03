@@ -1,7 +1,5 @@
 ﻿// LightingCalculations.cginc
 
-#include "UnityCG.cginc"
-#include "UnityStandardUtils.cginc"
 // Lambertian Diffuse Term (Disney)
 float3 DisneyDiffuse(float nl, float3 color)
 {
@@ -11,14 +9,14 @@ float3 DisneyDiffuse(float nl, float3 color)
     float diffuse = max(0.0, nl);
 
     // Energy-conserving adjustment
-    float3 adjustedDiffuse = diffuse * (1.0 + (color.rgb / 3.14));
+    float3 adjustedDiffuse = diffuse * ((color.rgb / 3.14159));
 
     // Apply base color
     return adjustedDiffuse * baseColor;
 }
 
 // GGX Specular Reflection Function
-float GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness, float3 lightColor)
+float3 GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness, float3 lightColor)
 {
     float3 h = normalize(viewDir + lightDir);
     float nh = max(0.0, dot(normal, h));
@@ -36,10 +34,8 @@ float GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 positio
     float G1 = (2.0 * nh) * invDenominator;
     float G = min(1.0, min(G1, 2.0 * nl / nh));
     
-    // Half vector calculation
-    float3 halfVec = normalize(viewDir + normalize(lightPosition - position));
     // Fresnel-Schlick approximation
-    float3 F = lightColor + (1 - lightColor) * pow(1 - dot(halfVec, viewDir), 4);
+    float3 F = lightColor + (1 - lightColor) * pow(1 - nv, 2);
 
     // Avoid division by zero by adding a small value
     float denominator = 4.0 * nv * nl + 0.001;
@@ -90,7 +86,7 @@ fixed3 AnisotropicSpecular(float3 viewDir, float3 position, float3 lightPosition
 }
 
 
-fixed3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float3 lightColor)
+fixed3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float3 lightColor, float roughness)
 {
     // Calculate the reflection direction
     float3 reflectionDir = reflect(-viewDir, normal);
@@ -99,7 +95,7 @@ fixed3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float3 lightColor)
     float angle = max(0, dot(viewDir, reflectionDir));
 
     // Retroreflective specular model (simple cosine lobe)
-    return pow(angle, 5) * lightColor;
+    return pow(angle, 5 * (roughness + 0.0001)) * lightColor;
 }
 
 fixed3 GGXSpecular(float3 viewDir, float3 normal, float3 lightColor)

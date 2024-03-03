@@ -17,13 +17,10 @@
         {
             CGPROGRAM
             #pragma vertex vert
-            #pragma exclude_renderers gles xbox360 ps3
             #pragma fragment frag
             #pragma target 3.0
             #include "UnityCG.cginc"
-            #include "UnityStandardConfig.cginc"
             #include "UnityPBSLighting.cginc"
-            #include "UnityStandardUtils.cginc"
             #include "LightingFastest.cginc"
 
             // to make internal referencing easier
@@ -38,16 +35,12 @@
             float _NumDirectionalLights;
             float _NumPointSpotLights;
             
-            // Directional Lights
-            StructuredBuffer<LightData> _DirectionalLightsBuffer;
-
-            // Point/Spot Lights
-            StructuredBuffer<LightData> _PointSpotLightsBuffer;
+            
 
             // Shader Properties
             float _Roughness;
             float _Specular;
-            sampler2D_half _MainTex, _NormalMap;
+            sampler2D _MainTex, _NormalMap;
             
             // Struct for Vertex Input
             struct appdata
@@ -62,7 +55,7 @@
             // Struct for Vertex Output
             struct v2f
             {
-                float4 pos : POSITION;
+                float4 vertex : SV_POSITION;
                 float4 color : COLOR;
                 float3 worldPos : TEXCOORD0;
                 float3 normal : TEXCOORD1;
@@ -70,7 +63,13 @@
                 float2 uv: TEXCOORD3;
                 
             };
+            
+             // Directional Lights
+                StructuredBuffer<LightData> _DirectionalLightsBuffer;
 
+            // Point/Spot Lights
+                StructuredBuffer<LightData> _PointSpotLightsBuffer;
+            
             // Vertex Shader
             v2f vert(appdata v)
             {
@@ -78,15 +77,17 @@
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 o.normal = mul(v.normal, unity_WorldToObject);
                 o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
-                o.pos = UnityObjectToClipPos(v.vertex);
+                o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color * 0.5;
                 o.uv = v.uv;
                 return o;
             }
 
             // Fragment Shader
-            half4 frag(v2f i) : COLOR
+            half4 frag(v2f i) : SV_Target
             {
+                
+                
                 float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
 
                 // Initialize accumulated color
@@ -102,7 +103,7 @@
 		                        normalMap.y * binormal +
 		                        normalMap.z * i.normal);
                 // Loop over directional lights
-                for (int j = 0; j < _NumDirectionalLights; ++j)
+                for (int j = 0; j < 4; ++j)
                 {
                     // Calculate array index for the current light
                     int arrayIndex = j;
@@ -128,7 +129,7 @@
                 }
 
                 // Loop over point/spot lights
-                for (int k = 0; k < _NumPointSpotLights; ++k)
+                for (int k = 0; k < 8; ++k)
                 {
                     // Calculate array index for the current light
                     int arrayIndexPS = k;
