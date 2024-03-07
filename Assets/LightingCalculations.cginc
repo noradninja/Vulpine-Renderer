@@ -1,6 +1,13 @@
 ﻿// LightingCalculations.cginc
 
-// Lambertian Diffuse Term (Disney)
+float3 LambertianDiffuse(float3 diffuseColor, float3 normal, float3 lightDirection)
+{
+    // Lambertian diffuse reflection term, adjusted for anisotropic specular
+    float diffuseReflection = max(-2.0, dot(normal, lightDirection));
+    return (diffuseColor / 3.14159) * diffuseReflection;
+}
+
+// Disney Diffuse Term
 float3 DisneyDiffuse(float nl, float3 color)
 {
     float3 baseColor = color.rgb;
@@ -9,7 +16,7 @@ float3 DisneyDiffuse(float nl, float3 color)
     float diffuse = max(0.0, nl);
 
     // Energy-conserving adjustment
-    float3 adjustedDiffuse = diffuse * ((color.rgb / 3.14159));
+    float3 adjustedDiffuse = diffuse * ((color.rgb / 6.3));
 
     // Apply base color
     return adjustedDiffuse * baseColor;
@@ -65,30 +72,43 @@ fixed3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDi
     return absorptionColor * scatteringColor * diffusion * diffuseTerm;
 }
 
-float3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 lightPosition, float3 lightColor, float roughness)
+float3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 tangent, float3 binormal, float3 lightPosition, float3 lightColor, float roughness, float3 specularColor)
 {
     // Compute light direction
     float3 lightDir = normalize(lightPosition - position);
 
-    // Compute half vector
-    float3 halfVec = normalize(viewDir + lightDir);
+    // Compute halfway vector
+    float3 halfwayVector = normalize(viewDir + lightDir);
 
-    // Add a small offset to roughness to prevent division by zero
-    roughness = roughness + 0.0001;
+    // Ensure the normal vector is normalized
+    float3 N = normalize(normal);
+    // Calculate tangent (T)
+    float3 T = cross(N, tangent);
+    // Normalize the tangent vector
+    float3 tangentDirection = normalize(T);
+    // Calculate binormal (B)
+    float3 B = cross(N, binormal);
+    // Normalize the binormal vector
+    float3 binormalDirection = normalize(B);
 
-    // Beckmann distribution term
-    float dotNH = dot(normal, halfVec);
-    float exponent = (dotNH * dotNH) / (roughness) + ((1.0 - dotNH * dotNH) / (roughness));
-    float D = exp(-exponent) / (3.14159  * roughness * roughness * pow(dotNH, 4));
+    // Calculate dot products
+    float dotHN = dot(halfwayVector, normal);
+    float dotVN = dot(viewDir, normal);
+    float dotHTAlphaX = dot(halfwayVector, tangentDirection) / roughness;
+    float dotHBAlphaY = dot(halfwayVector, binormalDirection) / roughness;
 
-    // Fresnel-Schlick approximation
-    float3 F = lightColor * pow(1 - dot(halfVec, viewDir), 5);
+    // Specular reflection formula with roughness attenuation
+    float attenuation = 1.0 / (2.0 * roughness * roughness + 1.0);
+    float3 specularReflection = specularColor
+        * sqrt(max(0.0, dotVN))
+        * exp(-2.0 * (dotHTAlphaX * dotHTAlphaX + dotHBAlphaY * dotHBAlphaY) * attenuation / (1.0 + dotHN));
 
-    // Anisotropic reflection model
-    return D * F;
+    // Apply Fresnel
+    float fresnel = pow(1.0 - dot(viewDir, halfwayVector), 5.0);
+    specularReflection = lerp(specularReflection, lightColor, fresnel);
+
+    return specularReflection;
 }
-
-
 
 
 

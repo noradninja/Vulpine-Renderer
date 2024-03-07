@@ -6,6 +6,7 @@
         _NormalMap ("Normal Map", 2D) = "bump" { }
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Specular ("Specular Intensity", Range(0, 1)) = 0.5
+        _SpecularTerm("Specular Term", Range(0,2)) = 0
     }
 
     SubShader
@@ -40,6 +41,7 @@
             // Shader Properties
             float _Roughness;
             float _Specular;
+            float _SpecularTerm;
             sampler2D _MainTex, _NormalMap;
             
             // Struct for Vertex Input
@@ -115,6 +117,8 @@
                     accumColor += LightAccumulation(
                         normal,
                         viewDir,
+                        i.tangent,
+                        binormal,
                         albedo,
                         light.color.rgb * _Specular,
                         _Roughness,
@@ -124,7 +128,8 @@
                         light.range,
                         light.intensity,
                         0.0,
-                        0.0
+                        0.0,
+                        _SpecularTerm
                         );
                 }
 
@@ -141,7 +146,9 @@
                     accumColor += LightAccumulation(
                         normal,
                         viewDir,
-                        float3(0.5,0.5,0.5),
+                        i.tangent,
+                        binormal,
+                        albedo,
                         pointSpotLight.color.rgb * _Specular,
                         _Roughness,
                         i.worldPos,
@@ -150,7 +157,8 @@
                         pointSpotLight.range,
                         pointSpotLight.intensity,
                         2.0,
-                        45
+                        45,
+                        _SpecularTerm
                         );
                 }
                 // Assign the final color to the pixel
