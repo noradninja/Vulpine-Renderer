@@ -20,4 +20,4 @@ TO DO-
 
 Add selector for specular and diffuse terms (see half3 spec in LightingFastest.cginc to set the spec term to test their output)
 Split light info into a static data buffer, and a dynamic light ID buffer so we can reduce the data needed each tick
-Much more shader work, incl shadows, Bakery support.
+Much more shader work, incl shadows, Bakery support. 
