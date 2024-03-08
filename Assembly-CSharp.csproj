@@ -68,6 +68,7 @@
     <Compile Include="Assets\Scripts\Managers\Rendering\ShaderController.cs" />
     <Compile Include="Assets\Scripts\RotateObject.cs" />
     <Compile Include="Assets\Scripts\SAI2x.cs" />
+    <None Include="Assets\LightingFastest.cginc" />
     <None Include="Assets\Shaders\LightingCalculations.cginc" />
     <None Include="Assets\Shaders\LightingFastest.cginc" />
     <None Include="Assets\Shaders\Standard Mobile.shader" />
