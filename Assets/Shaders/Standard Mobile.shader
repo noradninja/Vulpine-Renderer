@@ -1,4 +1,4 @@
-﻿Shader "Custom/LightShader"
+﻿Shader "PSP2 RP/Standard Mobile"
 {
     Properties
     {
@@ -7,12 +7,10 @@
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Metalness ("Metalness", Range(0, 1)) = 0.5
     }
-
     SubShader
     {
         Tags { "RenderType"="Opaque" }
         LOD 100
-
         Pass
         {
             CGPROGRAM
@@ -23,7 +21,15 @@
             #include "UnityPBSLighting.cginc"
             #include "LightingFastest.cginc"
 
-            // to make internal referencing easier
+            // Global Properties
+            float _NumDirectionalLights;
+            float _NumPointSpotLights;
+            // Shader Properties
+            float _Roughness;
+            float _Metalness;
+            sampler2D _MainTex, _NormalMap;
+            
+            // Struct to match C# struct for referencing
             struct LightData
             {
                 float3 position;
@@ -31,17 +37,6 @@
                 float range;
                 float intensity;
             };
-
-            float _NumDirectionalLights;
-            float _NumPointSpotLights;
-            
-            
-
-            // Shader Properties
-            float _Roughness;
-            float _Metalness;
-            sampler2D _MainTex, _NormalMap;
-            
             // Struct for Vertex Input
             struct appdata
             {
@@ -51,7 +46,6 @@
                 float4 color : COLOR;
                 float2 uv: TEXCOORD0;
             };
-
             // Struct for Vertex Output
             struct v2f
             {
@@ -64,10 +58,9 @@
                 
             };
             
-             // Directional Lights
+            // Global Directional Lights Buffer
                 StructuredBuffer<LightData> _DirectionalLightsBuffer;
-
-            // Point/Spot Lights
+            // Global Point/Spot Lights Buffer
                 StructuredBuffer<LightData> _PointSpotLightsBuffer;
             
             // Vertex Shader
@@ -78,89 +71,71 @@
                 o.normal = mul(v.normal, unity_WorldToObject);
                 o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.color = v.color * 0.5;
+                o.color = v.color;
                 o.uv = v.uv;
                 return o;
             }
-
             // Fragment Shader
             half4 frag(v2f i) : SV_Target
             {
-                
-                
-                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-
                 // Initialize accumulated color
                 float3 accumColor = 0;
                 // Sample the albedo and normal maps
                 float3 albedo = tex2D(_MainTex, i.uv).rgb;
                 float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv.xy));
+                // Prevents multing by zero on nonmetals
+                _Metalness += 0.001;
+                // Compute normal mapping
                 float3 binormal = cross(i.normal, i.tangent.xyz) * (i.tangent.w * unity_WorldTransformParams.w);
-
-                // Apply normal mapping
                 float3 normal = normalize(
 		                        normalMap.x * i.tangent +
 		                        normalMap.y * binormal +
 		                        normalMap.z * i.normal);
-                _Metalness += 0.01; //so we arent multing by zero
+                //Direction of ray from the camera towards the object surface
+                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos); 
+                // Per vertex grazing/Schlick terms
+                float3 grazingAngle = pow(1 - max(0.0, dot(i.normal, viewDir)), 4);
+                float3 F = pow(1 - dot(i.normal, viewDir), 2);
+                // Reflection direction- we *could* add a per vertex toggle here
+                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(normal)); // Direction of ray after hitting the surface of object
+                
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
                 {
                     // Calculate array index for the current light
                     int arrayIndex = j;
-
                     // Extract LightData using array indices from the global buffer
                     LightData light = _DirectionalLightsBuffer[arrayIndex];
-
                     // Add directional light contribution
                     accumColor += LightAccumulation(
-                        normal,
-                        viewDir,
-                        albedo,
-                        light.color.rgb * _Metalness,
-                        _Roughness,
-                        i.worldPos,
-                        light.position,
-                        light.color,
-                        light.range,
-                        light.intensity,
-                        0.0,
-                        0.0
+                            normal, viewDir, albedo,
+                            light.color.rgb * _Metalness, _Roughness,
+                            i.worldPos, light.position, light.color,
+                            light.range, light.intensity,
+                            0.0, 0.0, grazingAngle, reflection, F
                         );
                 }
-
                 // Loop over point/spot lights
                 for (int k = 0; k < 8; ++k)
                 {
                     // Calculate array index for the current light
                     int arrayIndexPS = k;
-
                     // Extract LightData using array indices from the global buffer
                     LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
-
                     // Add point/spot light contribution
                     accumColor += LightAccumulation(
-                        normal,
-                        viewDir,
-                        float3(0.5,0.5,0.5),
-                        pointSpotLight.color.rgb * _Metalness,
-                        _Roughness,
-                        i.worldPos,
-                        pointSpotLight.position,
-                        pointSpotLight.color,
-                        pointSpotLight.range,
-                        pointSpotLight.intensity,
-                        2.0,
-                        45
+                            normal, viewDir, albedo,
+                            pointSpotLight.color.rgb * _Metalness, _Roughness,
+                            i.worldPos, pointSpotLight.position, pointSpotLight.color,
+                            pointSpotLight.range, pointSpotLight.intensity,
+                            2.0, 45.0, grazingAngle, reflection, F
                         );
                 }
-                // Assign the final color to the pixel
+                // Assign the final color to the fragment
                 return float4(accumColor, 1.0);
             }
-
             ENDCG
         }
     }
-
     FallBack "Diffuse"
 }
