@@ -50,17 +50,21 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _MOARMap:
+        m_Texture: {fileID: 2800000, guid: 28d7b34a9ee75af469001fa07e2d9efd, type: 3}
+        m_Scale: {x: 1.5, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 4728d0b2527c46a478607ca6664c5277, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 1.5, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: aa08e245c787cd242880eaf43ea28651, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: e969674f840a1a844a95643331ebc345, type: 3}
+        m_Scale: {x: 60, y: 30}
         m_Offset: {x: 0, y: 0}
     - _NormalMap1:
         m_Texture: {fileID: 0}
@@ -96,12 +100,12 @@ Material:
     - _Glossiness: 0.385
     - _GlossyReflections: 1
     - _Metallic: 0.8
-    - _Metalness: 0.125
+    - _Metalness: 1
     - _Mode: 0
     - _Occlusion: 0.782
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Roughness: 0.125
+    - _Roughness: 1
     - _Shininess: 0.01
     - _SmoothnessTextureChannel: 0
     - _Specular: 1

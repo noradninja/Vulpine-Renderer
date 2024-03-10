@@ -3,6 +3,7 @@
     Properties
     {
         _MainTex ("Albedo (RGB)", 2D) = "white" { }
+        _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
         _NormalMap ("Normal Map", 2D) = "bump" { }
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Metalness ("Metalness", Range(0, 1)) = 0.5
@@ -16,7 +17,7 @@
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma target 3.0
+            #pragma target 4.1
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "LightingFastest.cginc"
@@ -27,7 +28,11 @@
             // Shader Properties
             float _Roughness;
             float _Metalness;
-            sampler2D _MainTex, _NormalMap;
+            sampler2D_half _MainTex, _NormalMap, _MOARMap;
+            
+            // Coordinate variables for textures
+            float4 _NormalMap_ST;
+            float4 _MainTex_ST;
             
             // Struct to match C# struct for referencing
             struct LightData
@@ -79,25 +84,33 @@
             half4 frag(v2f i) : SV_Target
             {
                 // Initialize accumulated color
-                float3 accumColor = 0;
-                // Sample the albedo and normal maps
-                float3 albedo = tex2D(_MainTex, i.uv).rgb;
-                float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv.xy));
+                float4 accumColor = float4(0,0,0,1);
                 // Prevents multing by zero on nonmetals
                 _Metalness += 0.001;
+                
+                // Sample the albedo, MOAR, and normal maps with built-in tiling and offset values
+                float4 MOAR = tex2D(_MOARMap, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
+                float3 albedo = tex2D(_MainTex, i.uv * _MainTex_ST.xy + _MainTex_ST.zw).rgb;
+                float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv * _NormalMap_ST.xy + _NormalMap_ST.zw));
+
                 // Compute normal mapping
                 float3 binormal = cross(i.normal, i.tangent.xyz) * (i.tangent.w * unity_WorldTransformParams.w);
                 float3 normal = normalize(
 		                        normalMap.x * i.tangent +
 		                        normalMap.y * binormal +
 		                        normalMap.z * i.normal);
-                //Direction of ray from the camera towards the object surface
-                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos); 
-                // Per vertex grazing/Schlick terms
+                //Get direction of ray from the camera towards the object surface
+                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);                
+
+                // Per vertex terms- replace i.normal with normal to make these per fragment
+                // Grazing
                 float3 grazingAngle = pow(1 - max(0.0, dot(i.normal, viewDir)), 4);
-                float3 F = pow(1 - dot(i.normal, viewDir), 2);
-                // Reflection direction- we *could* add a per vertex toggle here
-                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(normal)); // Direction of ray after hitting the surface of object
+                //Schlick
+                float3 F = pow(1 - dot(i.normal, viewDir), 4);
+                // Per Pixel Reflection because it makes a noticeable difference
+                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(normal));
+                // Add a tiny value to albedo to eliminate absolute blacks
+                albedo += 0.1f;
                 
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
@@ -108,8 +121,8 @@
                     LightData light = _DirectionalLightsBuffer[arrayIndex];
                     // Add directional light contribution
                     accumColor += LightAccumulation(
-                            normal, viewDir, albedo,
-                            light.color.rgb * _Metalness, _Roughness,
+                            normal, viewDir, albedo, MOAR,
+                            light.color.rgb * _Metalness, _Roughness, _Metalness,
                             i.worldPos, light.position, light.color,
                             light.range, light.intensity,
                             0.0, 0.0, grazingAngle, reflection, F
@@ -124,15 +137,15 @@
                     LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
                     // Add point/spot light contribution
                     accumColor += LightAccumulation(
-                            normal, viewDir, albedo,
-                            pointSpotLight.color.rgb * _Metalness, _Roughness,
+                            normal, viewDir, albedo, MOAR,
+                            pointSpotLight.color.rgb * _Metalness, _Roughness, _Metalness,
                             i.worldPos, pointSpotLight.position, pointSpotLight.color,
                             pointSpotLight.range, pointSpotLight.intensity,
                             2.0, 45.0, grazingAngle, reflection, F
                         );
                 }
                 // Assign the final color to the fragment
-                return float4(accumColor, 1.0);
+                return accumColor;
             }
             ENDCG
         }

@@ -2,7 +2,7 @@
 
 #include <HLSLSupport.cginc>
 // Lambertian Diffuse Term (Disney)
-float3 DisneyDiffuse(float nl, float3 color)
+half3 DisneyDiffuse(float nl, float3 color)
 {
     float3 baseColor = color.rgb;
 
@@ -16,7 +16,7 @@ float3 DisneyDiffuse(float nl, float3 color)
     return adjustedDiffuse * baseColor;
 }
 // GGX Specular Reflection Term
-half GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness, float3 lightColor, float3 grazingAngle)
+half3 GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness, float3 lightColor, float3 grazingAngle)
 {
     float3 h = normalize(viewDir + lightDir);
     float nh = max(0.0, dot(normal, h));
@@ -37,7 +37,7 @@ half GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position
     return (D * G * F) * rsqrt(denominator);
 }
 //
-half SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness)
+half3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness)
 {
     float nl = max(0.0, dot(normal, lightDir));
     // Subsurface scattering parameters
@@ -54,7 +54,7 @@ half SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir,
     return absorptionColor * scatteringColor * diffusion * diffuseTerm;
 }
 
-half AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 lightPosition, float roughness, float3 grazingAngle)
+half3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 lightPosition, float roughness, float3 grazingAngle)
 {
     // Compute light direction
     float3 lightDir = normalize(lightPosition - position);
@@ -72,14 +72,20 @@ half AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 
     return D * F;
 }
 
-half RetroreflectiveSpecular(float3 viewDir, float3 normal, float roughness, float3 grazingAngle)
+half3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float roughness, float F)
 {
     // Calculate the reflection direction
     float3 reflectionDir = reflect(-viewDir, normal);
 
     // Calculate the angle between the reflection direction and the view direction
-    float angle = max(0, dot(viewDir, reflectionDir));
+    float angle = F;
 
     // Retroreflective specular model (simple cosine lobe)
-    return pow(angle, 5 * (roughness + 0.0001));
+    half3 retroReflection = max(0.1, dot(viewDir, reflectionDir));
+
+    // Simulate refraction scattering by adding the color of the reflectionDir based on the grazing angle
+    half3 refractionScattering = lerp(retroReflection, normalize(normal) + retroReflection, angle);
+
+    // Combine retroreflection and refraction scattering
+    return retroReflection + (refractionScattering * angle * roughness);
 }
