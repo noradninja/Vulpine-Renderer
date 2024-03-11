@@ -90,9 +90,9 @@ half3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float roughness, fl
     return retroReflection + (refractionScattering * angle * roughness);
 }
 
-// We 'borrow' these from StandardUtils because I want to you know what each method is doing
+// We 'borrow' these from StandardUtils because I want to know what each method is doing
 // Unpack a normalmap and apply a scale factor
-half3 UnpackNormal (half4 packednormal, half bumpScale) {
+half3 ExtractNormal (half4 packednormal, half bumpScale) {
     half3 normal;
     normal.xy = (packednormal.wy * 2 - 1);
     normal.xy *= bumpScale;
@@ -100,9 +100,9 @@ half3 UnpackNormal (half4 packednormal, half bumpScale) {
     return normal;
 }
 // Unpack two normals from a single image- .rg = normalA.xy, .ba = normalB.xy, both .z are analytically derived
-half3 UnpackPackedNormals (half4 packednormal, half bumpScale) {
+half3 ExtractPackedNormals (half4 packednormal, half bumpScale) {
     half3 normal;
-    normal.xy = (packednormal.wy * 2 - 1);
+    normal.xy = (packednormal.wy * 2 - 1);//this will change, need to look at dxtnm format
     normal.xy *= bumpScale;
     normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
     return normal;
