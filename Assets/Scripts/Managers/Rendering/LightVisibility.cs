@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class LightVisibility : MonoBehaviour
 {
+    [ExecuteInEditMode]
     public Light _thisLight;
     public LightManager _lightManager;
     public EventBroadcaster _broadcaster;

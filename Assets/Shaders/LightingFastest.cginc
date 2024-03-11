@@ -38,9 +38,9 @@ float4 LightAccumulation(float3 normal, float3 viewDir, float3 albedo, float4 MO
     
     // Calculate the diffuse and specular terms
     half3 diff = DisneyDiffuse(dot(normal, lightDir), albedo);
-    half3 spec =//AnisotropicSpecular(viewDir, worldPosition, normal, lightPosition, roughness,  F);
+    half3 spec =AnisotropicSpecular(viewDir, worldPosition, normal, lightPosition, roughness,  F);
                 //RetroreflectiveSpecular(viewDir,normal, roughness,  grazingAngle);
-                GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, specularColor, F);
+                //GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, roughness, specularColor, F);
 
     // Fresnel-Schlick approximation for grazing reflection based on angle and roughness
     half3 F0 = specularColor;

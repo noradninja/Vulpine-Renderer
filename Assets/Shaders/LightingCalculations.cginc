@@ -65,7 +65,7 @@ half3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3
     // Beckmann distribution term
     float dotNH = dot(normal, halfVec);
     float exponent = (dotNH * dotNH) / (roughness) + ((1.0 - dotNH * dotNH) / (roughness));
-    float D = exp(-exponent) / (2  * roughness * pow(dotNH, 4));
+    float D = exp(-exponent) / (1  * roughness * pow(dotNH, 2));
     // Fresnel-Schlick approximation
     float3 F = grazingAngle;
     // Anisotropic reflection model
@@ -88,4 +88,26 @@ half3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float roughness, fl
 
     // Combine retroreflection and refraction scattering
     return retroReflection + (refractionScattering * angle * roughness);
+}
+
+// We 'borrow' these from StandardUtils because I want to you know what each method is doing
+// Unpack a normalmap and apply a scale factor
+half3 UnpackNormal (half4 packednormal, half bumpScale) {
+    half3 normal;
+    normal.xy = (packednormal.wy * 2 - 1);
+    normal.xy *= bumpScale;
+    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+    return normal;
+}
+// Unpack two normals from a single image- .rg = normalA.xy, .ba = normalB.xy, both .z are analytically derived
+half3 UnpackPackedNormals (half4 packednormal, half bumpScale) {
+    half3 normal;
+    normal.xy = (packednormal.wy * 2 - 1);
+    normal.xy *= bumpScale;
+    normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
+    return normal;
+}
+//combine two normal maps together using whiteout blending for contrast
+half3 BlendTwoNormals (half3 n1, half3 n2) {
+    return normalize(half3(n1.xy + n2.xy, n1.z * n2.z));
 }

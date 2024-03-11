@@ -2,9 +2,10 @@
 {
     Properties
     {
-        _MainTex ("Albedo (RGB)", 2D) = "white" { }
+        _MainTex ("Albedo (RGB)", 2D) = "black" { }
         _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
         _NormalMap ("Normal Map", 2D) = "bump" { }
+        _NormalHeight ("Height", Range(-2,2)) = 1
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Metalness ("Metalness", Range(0, 1)) = 0.5
     }
@@ -17,7 +18,7 @@
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma target 4.1
+            #pragma target 3.0
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "LightingFastest.cginc"
@@ -26,8 +27,8 @@
             float _NumDirectionalLights;
             float _NumPointSpotLights;
             // Shader Properties
-            float _Roughness;
-            float _Metalness;
+            float _Roughness, _Metalness;
+            half _NormalHeight;
             sampler2D_half _MainTex, _NormalMap, _MOARMap;
             
             // Coordinate variables for textures
@@ -87,12 +88,12 @@
                 float4 accumColor = float4(0,0,0,1);
                 // Prevents multing by zero on nonmetals
                 _Metalness += 0.001;
-                
+               
                 // Sample the albedo, MOAR, and normal maps with built-in tiling and offset values
                 float4 MOAR = tex2D(_MOARMap, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
                 float3 albedo = tex2D(_MainTex, i.uv * _MainTex_ST.xy + _MainTex_ST.zw).rgb;
-                float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv * _NormalMap_ST.xy + _NormalMap_ST.zw));
-
+                float3 normalMap = UnpackNormal(tex2D(_NormalMap, i.uv * _NormalMap_ST.xy + _NormalMap_ST.zw), _NormalHeight);
+                
                 // Compute normal mapping
                 float3 binormal = cross(i.normal, i.tangent.xyz) * (i.tangent.w * unity_WorldTransformParams.w);
                 float3 normal = normalize(

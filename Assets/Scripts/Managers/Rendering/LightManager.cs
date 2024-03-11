@@ -3,6 +3,7 @@ using UnityEngine.Serialization;
 
 public class LightManager : MonoBehaviour
 {
+    [ExecuteInEditMode]
     [System.Serializable]
     public struct LightData
     {
@@ -35,12 +36,8 @@ public class LightManager : MonoBehaviour
     public LightData[] pointSpotLightsArray = new LightData[MaxPointSpotLights];
     public int numActiveDirectionalLights;
     public int numActivePointSpotLights;
-    //we will pack the cookies into two atlases and set them as a global texture
-    public Texture[] pointSpotCookieTextures = new Texture[MaxPointSpotLights];
-    public Texture[] directionalCookieTextures = new Texture[MaxDirectionalLights];
-    public Texture cookiePlaceholder; //set up a placeholder for light cookies if no cookie, a 1x1 white pixel
-    public Texture2D pointSpotAtlas;
-    public Texture2D directionalAtlas;
+    public Texture2D spotShapeCookie;
+    public Texture2D flashlightShapeCookie;
     
 
     private void Start()
@@ -193,10 +190,9 @@ public class LightManager : MonoBehaviour
         //we need the number of objects in each array to iterate them in the shader
         Shader.SetGlobalInt("_NumDirectionalLights", numActiveDirectionalLights);
         Shader.SetGlobalInt("_NumPointSpotLights", numActivePointSpotLights);
-        //send the packed textures to a pair of global slots on the GPU
-        //Shader.SetGlobalTexture("_pointSpotAtlas", pointSpotAtlas);
-        //we also need the UV's
-       // Shader.SetGlobalBuffer("_pointSpotAtlasBuffer", pointSpotAtlasBuffer);
+        //send the spot cookie textures to a pair of global slots on the GPU
+        Shader.SetGlobalTexture("_spotShapeCookie", spotShapeCookie);
+        Shader.SetGlobalTexture("_flashlightShapeCookie", flashlightShapeCookie);
     }
     
     private void atlasTextures(Texture[] texturesToAtlas, int atlasWidth, int atlasHeight)
