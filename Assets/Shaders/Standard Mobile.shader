@@ -91,7 +91,7 @@
                
                 // Sample the albedo, MOAR, and normal maps with built-in tiling and offset values
                 float4 MOAR = tex2D(_MOARMap, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
-                float3 albedo = tex2D(_MainTex, i.uv * _MainTex_ST.xy + _MainTex_ST.zw).rgb;
+                float4 albedo = tex2D(_MainTex, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
                 float3 normalMap = ExtractNormal(tex2D(_NormalMap, i.uv * _NormalMap_ST.xy + _NormalMap_ST.zw), _NormalHeight);
                 
                 // Compute normal mapping
@@ -104,14 +104,12 @@
                 float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);                
 
                 // Per vertex terms- replace i.normal with normal to make these per fragment
-                // Grazing
-                float3 grazingAngle = pow(1 - max(0.0, dot(i.normal, viewDir)), 4);
-                //Schlick
-                float3 F = pow(1 - dot(i.normal, viewDir), 4);
-                // Per Pixel Reflection because it makes a noticeable difference
-                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(normal));
+                // Schlick
+                float3 grazingAngle = max (0,pow(1 - dot(i.normal, viewDir), 4));
+                // Reflection
+                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(i.normal));
                 // Add a tiny value to albedo to eliminate absolute blacks
-                albedo += 0.1f;
+                albedo.rgb += 0.1f;
                 
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
@@ -126,7 +124,7 @@
                             light.color.rgb * _Metalness, _Roughness, _Metalness,
                             i.worldPos, light.position, light.color,
                             light.range, light.intensity,
-                            0.0, 0.0, grazingAngle, reflection, F
+                            0.0, 0.0, grazingAngle, reflection
                         );
                 }
                 // Loop over point/spot lights
@@ -142,7 +140,7 @@
                             pointSpotLight.color.rgb * _Metalness, _Roughness, _Metalness,
                             i.worldPos, pointSpotLight.position, pointSpotLight.color,
                             pointSpotLight.range, pointSpotLight.intensity,
-                            2.0, 45.0, grazingAngle, reflection, F
+                            2.0, 45.0, grazingAngle, reflection
                         );
                 }
                 // Assign the final color to the fragment

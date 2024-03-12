@@ -1,0 +1,203 @@
+fileFormatVersion: 2
+guid: 475d49b5f2035ea4ca129a860837435a
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: Awning
+    100002: Back_Half
+    100004: Back_Trims
+    100006: Balcony
+    100008: Curved_Handle_A
+    100010: Curved_Handle_B
+    100012: Doorknob
+    100014: Front_Half
+    100016: Front_Trims
+    100018: Front_Trims 1
+    100020: Glass_Back
+    100022: Glass_Front
+    100024: Glass_Front_Display
+    100026: //RootNode
+    100028: Ivy
+    100030: Meter_Glass
+    100032: pasted__Meter_Glass2
+    100034: Plaque
+    100036: Porch_Slats
+    100038: Roof_Chimney
+    100040: Roof_Chimney_Porch_Stairs_Rail_Slats
+    100042: Roof_Glass
+    100044: Trims_Back
+    100046: Trims_Front
+    400000: Awning
+    400002: Back_Half
+    400004: Back_Trims
+    400006: Balcony
+    400008: Curved_Handle_A
+    400010: Curved_Handle_B
+    400012: Doorknob
+    400014: Front_Half
+    400016: Front_Trims
+    400018: Front_Trims 1
+    400020: Glass_Back
+    400022: Glass_Front
+    400024: Glass_Front_Display
+    400026: //RootNode
+    400028: Ivy
+    400030: Meter_Glass
+    400032: pasted__Meter_Glass2
+    400034: Plaque
+    400036: Porch_Slats
+    400038: Roof_Chimney
+    400040: Roof_Chimney_Porch_Stairs_Rail_Slats
+    400042: Roof_Glass
+    400044: Trims_Back
+    400046: Trims_Front
+    2100000: Back_Exterior2
+    2100002: Front_Exterior2
+    2100004: Foliage1
+    2100006: Alpha_Trims_Front1
+    2100008: Trims_Front2
+    2100010: pasted__Trims_Front2
+    2100012: lambert22
+    2100014: Alpha_Front_Exterior
+    2100016: Trims_Back2
+    2100018: Roof_Porch_Rails2
+    2100020: Alpha_Roof_Porch_Rails1
+    2300000: Awning
+    2300002: Back_Half
+    2300004: Back_Trims
+    2300006: Balcony
+    2300008: Curved_Handle_A
+    2300010: Curved_Handle_B
+    2300012: Doorknob
+    2300014: Front_Half
+    2300016: Front_Trims 1
+    2300018: Glass_Back
+    2300020: Glass_Front
+    2300022: Glass_Front_Display
+    2300024: Ivy
+    2300026: Meter_Glass
+    2300028: pasted__Meter_Glass2
+    2300030: Plaque
+    2300032: Porch_Slats
+    2300034: Roof_Chimney
+    2300036: Roof_Glass
+    3300000: Awning
+    3300002: Back_Half
+    3300004: Back_Trims
+    3300006: Balcony
+    3300008: Curved_Handle_A
+    3300010: Curved_Handle_B
+    3300012: Doorknob
+    3300014: Front_Half
+    3300016: Front_Trims 1
+    3300018: Glass_Back
+    3300020: Glass_Front
+    3300022: Glass_Front_Display
+    3300024: Ivy
+    3300026: Meter_Glass
+    3300028: pasted__Meter_Glass2
+    3300030: Plaque
+    3300032: Porch_Slats
+    3300034: Roof_Chimney
+    3300036: Roof_Glass
+    4300000: Back_Half
+    4300002: Front_Half
+    4300004: Ivy
+    4300006: Awning
+    4300008: Front_Trims
+    4300010: pasted__Meter_Glass2
+    4300012: Meter_Glass
+    4300014: Balcony
+    4300016: Glass_Front_Display
+    4300018: Glass_Front
+    4300020: Curved_Handle_A
+    4300022: Curved_Handle_B
+    4300024: Doorknob
+    4300026: Plaque
+    4300028: Back_Trims
+    4300030: Glass_Back
+    4300032: Roof_Glass
+    4300034: Roof_Chimney
+    4300036: Porch_Slats
+  externalObjects: {}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
