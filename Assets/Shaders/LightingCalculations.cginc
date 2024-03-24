@@ -69,11 +69,11 @@ half3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3
     // Compute half vector
     float3 halfVec = normalize(viewDir - lightDir);
     // Add a small offset to roughness to prevent division by zero
-    roughness = roughness + 0.0001;
+    roughness = roughness + 0.001;
     // Beckmann distribution term
     float dotNH = dot(normal, halfVec);
     float exponent = (dotNH * dotNH) / (roughness) + ((1.0 - dotNH * dotNH) / (roughness));
-    float D = exp(-exponent) / (1  * roughness * pow(dotNH, 2));
+    float D = exp(-exponent * 1-roughness) / (1  * roughness * pow(dotNH, 2));
     // Fresnel-Schlick approximation
     float3 F = grazingAngle;
     // Anisotropic reflection model

@@ -64,6 +64,6 @@ float4 LightAccumulation(float3 normal, float3 viewDir, float4 albedo, float4 MO
     // Lighting model
     half3 combinedLight = (diff + spec) * (lightColor * fallOff);
     // Final BRDF   
-    float3 combinedColor = (( albedo * combinedLight  * occlusion) + (skyColor * FR) + albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb * 0.1));
+    float3 combinedColor = ((albedo * combinedLight  * occlusion) + (skyColor * FR * metalness) + albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb * 0.1));
     return half4(combinedColor, alpha);
 }
