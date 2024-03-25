@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Experimental.PlayerLoop;
 using UnityEngine.Serialization;
 
 public class LightManager : MonoBehaviour
@@ -69,7 +70,7 @@ public class LightManager : MonoBehaviour
         data.variables.x = visibleLight.range;
         data.variables.y = visibleLight.intensity;
         data.variables.z = 1;
-        data.variables.w = 1;
+        data.variables.w = visibleLight.GetComponent<LightVisibility>().lightID;
 
 
         if (visibleLight.type == UnityEngine.LightType.Directional)
@@ -171,6 +172,44 @@ public class LightManager : MonoBehaviour
             numActivePointSpotLights--;
             DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
         }
+    }
+
+    public void UpdateLightInBuffer(Light lightToUpdate, float lightID)
+    {
+        if (lightToUpdate.type == UnityEngine.LightType.Directional) //directional light
+        {
+            for (int i = 0; i < numActiveDirectionalLights - 1; i++)
+            {
+                if (directionalLightsArray[i].variables.w == lightID)
+                {
+                    directionalLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x, lightToUpdate.transform.position.y,
+                        lightToUpdate.transform.position.z, 1);
+                    directionalLightsArray[i].color = lightToUpdate.color.linear;
+                    directionalLightsArray[i].variables.x = lightToUpdate.range;
+                    directionalLightsArray[i].variables.y = lightToUpdate.intensity;
+                    directionalLightsArray[i].variables.z = 1;
+                    directionalLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID; 
+                }
+            }
+        }
+        else //point/spot
+        {
+            for (int i = 0; i < numActivePointSpotLights - 1; i++)
+            {
+                if (pointSpotLightsArray[i].variables.w == lightID)
+                {
+                    pointSpotLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x,
+                        lightToUpdate.transform.position.y,
+                        lightToUpdate.transform.position.z, 1);
+                    pointSpotLightsArray[i].color = lightToUpdate.color.linear;
+                    pointSpotLightsArray[i].variables.x = lightToUpdate.range;
+                    pointSpotLightsArray[i].variables.y = lightToUpdate.intensity;
+                    pointSpotLightsArray[i].variables.z = 1;
+                    pointSpotLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
+                }
+            }  
+        }
+        UpdateBuffer();
     }
 
     private void UpdateBuffer()

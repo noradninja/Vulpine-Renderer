@@ -4,6 +4,7 @@
     {
         _MainTex ("Albedo (RGB)", 2D) = "black" { }
         _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
+        _Cutoff ("Alpha cutoff", Range(0,1)) = 0
         _NormalMap ("Normal Map", 2D) = "bump" { }
         _NormalHeight ("Height", Range(-2,2)) = 1
         _Roughness ("Roughness", Range(0,1)) = 0.5
@@ -11,8 +12,11 @@
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+	    Tags { "RenderType"="Opaque"}
+        ZWrite On
+		Blend One OneMinusSrcAlpha //because we are going to clip at the end
         LOD 100
+        //Cull Off
         Pass
         {
             CGPROGRAM
@@ -21,13 +25,14 @@
             #pragma target 3.0
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
+            #include "AutoLight.cginc"
             #include "LightingFastest.cginc"
 
             // Global Properties
             float _NumDirectionalLights;
             float _NumPointSpotLights;
             // Shader Properties
-            float _Roughness, _Metalness;
+            float _Roughness, _Metalness, _Cutoff;
             half _NormalHeight;
             sampler2D_half _MainTex, _NormalMap, _MOARMap;
             
@@ -61,6 +66,7 @@
                 float3 normal : TEXCOORD1;
                 float4 tangent : TEXCOORD2;
                 float2 uv: TEXCOORD3;
+            	LIGHTING_COORDS(4,5)
                 
             };
             
@@ -79,6 +85,7 @@
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
                 o.uv = v.uv;
+            	TRANSFER_VERTEX_TO_FRAGMENT(o);
                 return o;
             }
             // Fragment Shader
@@ -110,7 +117,7 @@
                 half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(i.normal));
                 // Add a tiny value to albedo to eliminate absolute blacks
                 albedo.rgb += 0.1f;
-                
+                float shadow = LIGHT_ATTENUATION(i);
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
                 {
@@ -124,7 +131,7 @@
                             light.color.rgb * _Metalness, _Roughness, _Metalness,
                             i.worldPos, light.position, light.color,
                             light.range, light.intensity,
-                            0.0, 0.0, grazingAngle, reflection
+                            0.0, 0.0, grazingAngle, reflection, _Cutoff, shadow
                         );
                 }
                 // Loop over point/spot lights
@@ -140,7 +147,7 @@
                             pointSpotLight.color.rgb * _Metalness, _Roughness, _Metalness,
                             i.worldPos, pointSpotLight.position, pointSpotLight.color,
                             pointSpotLight.range, pointSpotLight.intensity,
-                            2.0, 45.0, grazingAngle, reflection
+                            2.0, 45.0, grazingAngle, reflection, _Cutoff, shadow
                         );
                 }
                 // Assign the final color to the fragment
@@ -148,6 +155,59 @@
             }
             ENDCG
         }
+//		//  Shadow rendering pass
+//        Pass{
+//            Tags {"LightMode"="ShadowCaster"}
+//
+//            CGPROGRAM
+//            #pragma vertex vert
+//            #pragma fragment frag
+//			#pragma target 3.0
+//            #pragma multi_compile_shadowcaster
+//			#pragma multi_compile_fog
+//			#pragma multi_compile _ LOD_FADE_CROSSFADE
+//            #include "UnityCG.cginc"
+//			#include "UnityPBSLighting.cginc" // TBD: remove
+//			
+//			struct v2f {
+//				V2F_SHADOW_CASTER;
+//				half2  uv : TEXCOORD0;
+//				UNITY_VERTEX_OUTPUT_STEREO
+//			};
+//			struct appdata {
+//				half3 vertex : POSITION;
+//				half3 uv : TEXCOORD0;
+//				
+//
+//			};
+//			sampler2D_half _MainTex, _MOARMap;
+//            float4 _MainTex_ST;
+//            float _Cutoff;
+//			
+//						
+//			v2f vert( appdata v )
+//			{
+//				v2f o;
+//				half3 worldPos = mul (unity_ObjectToWorld, half4(v.vertex, 1) ).xyz;
+//				UNITY_SETUP_INSTANCE_ID(v);
+//				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+//				TRANSFER_SHADOW_CASTER(o);
+//				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+//				return o;
+//			}
+//            
+//			half4 frag( v2f i ) : SV_Target
+//			{
+//			
+//				fixed4 texcol = tex2D( _MOARMap, i.uv );
+//				
+//		
+//					clip(texcol.b - _Cutoff );
+//						
+//				SHADOW_CASTER_FRAGMENT(i);
+//			}
+//            ENDCG
+//        }
     }
     FallBack "Diffuse"
 }

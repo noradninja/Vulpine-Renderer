@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class LightVisibility : MonoBehaviour
 {
-    [ExecuteInEditMode]
+    public float lightID;
     public Light _thisLight;
     public LightManager _lightManager;
     public EventBroadcaster _broadcaster;
@@ -28,15 +28,15 @@ public class LightVisibility : MonoBehaviour
 
     private float _prevIntensity;
     private float _prevRange;
-    private float _intensity;
-    private float _range;
+    private Vector3 _prevPosition; // Store previous position
     private void Start()
     {
         _thisLight = GetComponent<Light>();
         _broadcaster = FindObjectOfType<EventBroadcaster>();
         _lightManager = FindObjectOfType<LightManager>();
-        _intensity = _thisLight.intensity;
-        _range = _thisLight.range;
+        _prevIntensity = _thisLight.intensity;
+        _prevPosition = _thisLight.transform.position; // Initialize previous position
+        
         if (_broadcaster == null) return;
 
         switch (frameInterval)
@@ -68,32 +68,27 @@ public class LightVisibility : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (_intensity != _prevIntensity && isVisible)
-        {
-            _lightManager.OnNotVisible(_thisLight);
-            _lightManager.OnVisible(_thisLight);
-        }
-    }
-
     void CheckVisibility(int frame)
     {
         Bounds lightBounds = new Bounds(transform.position, Vector3.one * _thisLight.range);
-
+        
+        // we are in the view frustum
         if (Camera.main != null && GeometryUtility.TestPlanesAABB(
-                GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix),
-                lightBounds))
+            GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix),
+            lightBounds))
         {
+            // add the light if it wasn't in the view the previous tick
             if (!isVisible)
             {
                 isVisible = true;
                 _lightManager.OnVisible(_thisLight);
             }
+            if (isInBuffer) // Update the info for the light if it is visible
+                _lightManager.UpdateLightInBuffer(_thisLight, lightID);
         }
 
         if (Camera.main != null && !GeometryUtility.TestPlanesAABB(
-                GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix), lightBounds))
+            GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix), lightBounds))
         {
             if (isVisible)
             {
@@ -101,7 +96,5 @@ public class LightVisibility : MonoBehaviour
                 _lightManager.OnNotVisible(_thisLight);
             }
         }
-        // Update wasPreviouslyVisible for the next frame
-        wasPreviouslyVisible = isVisible;
     }
 }

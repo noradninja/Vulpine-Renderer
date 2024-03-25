@@ -88,7 +88,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - _BumpScale: 1
-    - _Cutoff: 0.5
+    - _Cutoff: 0
     - _DetailNormalMapScale: 1
     - _DiffuseCalculation: 0
     - _DiffuseInVertex: 0
@@ -106,7 +106,7 @@ Material:
     - _Occlusion: 0.782
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Roughness: 0.811
+    - _Roughness: 0.316
     - _Shininess: 0.01
     - _SmoothnessTextureChannel: 0
     - _Specular: 1

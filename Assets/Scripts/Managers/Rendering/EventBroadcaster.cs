@@ -23,14 +23,14 @@ using UnityEngine.Events;
         {
             currentFrame++;
 
-            if (currentFrame == 1) onFrame1.Invoke(currentFrame);
-            if (currentFrame == 2) onFrame2.Invoke(currentFrame);
-            if (currentFrame == 3) onFrame3.Invoke(currentFrame);
-            if (currentFrame == 5) onFrame5.Invoke(currentFrame);
-            if (currentFrame == 10) onFrame10.Invoke(currentFrame);
-            if (currentFrame == 15) onFrame15.Invoke(currentFrame);
-            if (currentFrame == 30) onFrame30.Invoke(currentFrame);
-            if (currentFrame == 60)
+            if (currentFrame%1 == 0) onFrame1.Invoke(currentFrame);
+            if (currentFrame%2 == 0) onFrame2.Invoke(currentFrame);
+            if (currentFrame%3 == 0) onFrame3.Invoke(currentFrame);
+            if (currentFrame%5 == 0) onFrame5.Invoke(currentFrame);
+            if (currentFrame%10 == 0) onFrame10.Invoke(currentFrame);
+            if (currentFrame%15 == 0) onFrame15.Invoke(currentFrame);
+            if (currentFrame%30 == 0) onFrame30.Invoke(currentFrame);
+            if (currentFrame%60 == 0)
             {
                 onFrame60.Invoke(currentFrame);
                 currentFrame = 0;

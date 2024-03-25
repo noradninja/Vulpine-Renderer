@@ -15,7 +15,7 @@ float3 DecodeHDR(in float4 rgbm)
 // Loop for one light
 float4 LightAccumulation(float3 normal, float3 viewDir, float4 albedo, float4 MOAR, float3 specularColor, float roughness,
                          float metalness, float3 worldPosition, float3 lightPosition, float3 lightColor, float range, float intensity,
-                         float lightType, float spotAngle, float3 grazingAngle, float3 reflection)
+                         float lightType, float spotAngle, float3 grazingAngle, float3 reflection, float cutOff, float shadow)
 {
     half fallOff = 1.0;
     if (lightType < 0.5) // directional light
@@ -62,8 +62,9 @@ float4 LightAccumulation(float3 normal, float3 viewDir, float4 albedo, float4 MO
     half3 skyColor = DecodeHDR (skyData, unity_SpecCube0_HDR) * 0.05;            
 
     // Lighting model
-    half3 combinedLight = (diff + spec) * (lightColor * fallOff);
+    half3 combinedLight = (diff + spec) * (lightColor * shadow * fallOff);
     // Final BRDF   
-    float3 combinedColor = ((albedo * combinedLight  * occlusion) + (skyColor * FR * metalness) + albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb * 0.1));
+    float3 combinedColor = ((albedo * combinedLight * occlusion) + (skyColor * FR * metalness) + (albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb * 0.1)));
+    clip( alpha - cutOff );
     return half4(combinedColor, alpha);
 }
