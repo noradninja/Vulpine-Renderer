@@ -1,4 +1,6 @@
-﻿// LightingCalculations.cginc
+﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+
+// LightingCalculations.cginc
 
 #include <HLSLSupport.cginc>
 
@@ -15,28 +17,31 @@ half3 DisneyDiffuse(float nl, float3 color)
     // Apply base color
     return adjustedDiffuse * baseColor;
 }
-// Subsurface scattering
-half3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness)
+
+// Subsurface scattering with edge glow
+half3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float3 lightColor, float3 albedo, float roughness)
 {
     float nl = max(0.0, dot(normal, lightDir));
+    float nv = max(0.0, dot(normal, viewDir));
     // Subsurface scattering parameters
-    float3 absorptionColor = float3(0.5, 0.2, 0.1); // Adjust as needed
-    float3 scatteringColor = float3(1.0, 0.8, 0.6); // Adjust as needed
-    float scatteringCoeff = 0.05; // Adjust as needed
+    float3 absorptionColor = albedo; // Adjust as needed
+    float3 scatteringColor = lightColor; // Adjust as needed
+    float scatteringCoeff = 0.1; // Adjust as needed
     // Calculate the distance the light travels through the material
-    float distance = length(lightPosition - position);
-    // Calculate the diffusion term
-    float diffusion = exp(-scatteringCoeff * distance);
-    // Calculate the Disney diffuse term
-    float3 diffuseTerm = DisneyDiffuse(nl, normal);
-    // Subsurface scattering model
-    return absorptionColor * scatteringColor * diffusion * diffuseTerm;
+    float3 h = normalize(viewDir + lightDir);
+    half vh = pow(saturate(dot(nv, h)), 0.5);
+ 
+    float3 sss = lerp(scatteringColor  * scatteringCoeff, absorptionColor, vh);
+    
+    return sss;
 }
+
+
 
 /////////////////////SPECULAR//////////////////////////////////////
 
 // GGX
-half3 GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float roughness, float3 lightColor, float3 grazingAngle)
+half3 GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float3 lightColor, float roughness, float3 grazingAngle)
 {
     // Get dot products needed
     float3 h = normalize(viewDir + lightDir);
@@ -59,8 +64,9 @@ half3 GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 positio
     // Avoid division by zero by adding a small value
     float denominator = 4.0 * nv * nl + 0.001;
     // Multiply instead of dividing
-    return (D * G * F) * rsqrt(denominator);
+    return (D * G * F) * rsqrt(denominator) * lightColor;
 }
+
 // Anisotropic
 half3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 lightPosition, float roughness, float3 grazingAngle)
 {
@@ -79,6 +85,7 @@ half3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3
     // Anisotropic reflection model
     return D * F;
 }
+
 // Retroreflective
 half3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float roughness, float grazingAngle)
 {

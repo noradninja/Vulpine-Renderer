@@ -63,7 +63,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: 5a8bcfe6051dd00478b1073ed00f3491, type: 3}
+        m_Texture: {fileID: 2800000, guid: ed2a36ad106925948a4b23a331dee772, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap1:
@@ -102,7 +102,7 @@ Material:
     - _Metallic: 0.8
     - _Metalness: 1
     - _Mode: 0
-    - _NormalHeight: 0
+    - _NormalHeight: 1
     - _Occlusion: 0.782
     - _OcclusionStrength: 1
     - _Parallax: 0.02

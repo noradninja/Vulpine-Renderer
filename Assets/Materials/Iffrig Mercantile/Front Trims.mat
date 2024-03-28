@@ -102,7 +102,7 @@ Material:
     - _Metallic: 0.8
     - _Metalness: 1
     - _Mode: 0
-    - _NormalHeight: 0
+    - _NormalHeight: 1
     - _Occlusion: 0.782
     - _OcclusionStrength: 1
     - _Parallax: 0.02

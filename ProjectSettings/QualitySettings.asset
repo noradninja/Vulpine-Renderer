@@ -157,12 +157,12 @@ QualitySettings:
     blendWeights: 1
     textureQuality: 0
     anisotropicTextures: 2
-    antiAliasing: 4
+    antiAliasing: 0
     softParticles: 1
     softVegetation: 1
     realtimeReflectionProbes: 0
     billboardsFaceCameraPosition: 0
-    vSyncCount: 0
+    vSyncCount: 2
     lodBias: 1.5
     maximumLODLevel: 0
     streamingMipmapsActive: 0
@@ -210,4 +210,6 @@ QualitySettings:
     asyncUploadBufferSize: 4
     resolutionScalingFixedDPIFactor: 1
     excludedTargetPlatforms: []
-  m_PerPlatformDefaultQuality: {}
+  m_PerPlatformDefaultQuality:
+    PSP2: 0
+    Standalone: 0

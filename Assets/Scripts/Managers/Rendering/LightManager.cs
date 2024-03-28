@@ -61,11 +61,10 @@ public class LightManager : MonoBehaviour
 
     public void OnVisible(Light visibleLight)
     {
-        visibleLight.intensity = 20;
         LightData data = new LightData();
         
        
-        data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, 1);
+        data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, visibleLight.intensity);
         data.color = visibleLight.color.linear;
         data.variables.x = visibleLight.range;
         data.variables.y = visibleLight.intensity;
