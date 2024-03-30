@@ -1,17 +1,16 @@
 ﻿using System;
 using UnityEngine;
-
+[ExecuteInEditMode]
 public class LightVisibility : MonoBehaviour
 {
     public float lightID;
     public Light _thisLight;
     public LightManager _lightManager;
     public EventBroadcaster _broadcaster;
-
     public bool isVisible = false;
     public bool wasPreviouslyVisible = false;
     public bool isInBuffer = false;
-
+    //lit. the inspector menu selections for light update frequency
     public enum FrameInterval
     {
         EveryFrame,
@@ -26,20 +25,16 @@ public class LightVisibility : MonoBehaviour
 
     public FrameInterval frameInterval;
 
-    private float _prevIntensity;
-    private float _prevRange;
-    private Vector3 _prevPosition; // Store previous position
     private void Start()
     {
+        //set our references so we can be lazy
         _thisLight = GetComponent<Light>();
         _broadcaster = FindObjectOfType<EventBroadcaster>();
         _lightManager = FindObjectOfType<LightManager>();
-        _prevIntensity = _thisLight.intensity;
-        _prevPosition = _thisLight.transform.position; // Initialize previous position
-        
-        if (_broadcaster == null) return;
-
-        switch (frameInterval)
+        //bail if the event manager doesn't exist
+        if (_broadcaster == null) return; 
+        //check to see which interval we set, and subscribe to it's event
+        switch (frameInterval) 
         {
             case FrameInterval.EveryFrame:
                 _broadcaster.onFrame1.AddListener(CheckVisibility);
@@ -70,26 +65,28 @@ public class LightVisibility : MonoBehaviour
 
     void CheckVisibility(int frame)
     {
+        //get the cube bounds that contain this light and its range
         Bounds lightBounds = new Bounds(transform.position, Vector3.one * _thisLight.range);
-        
-        // we are in the view frustum
+        //we are in the view frustum
         if (Camera.main != null && GeometryUtility.TestPlanesAABB(
             GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix),
             lightBounds))
         {
-            // add the light if it wasn't in the view the previous tick
+            //add the light if it wasn't in the view the previous tick
             if (!isVisible)
             {
                 isVisible = true;
                 _lightManager.OnVisible(_thisLight);
             }
-            if (isInBuffer) // Update the info for the light if it is visible
+            //update the info for the light if it is already in the buffer (and therefore visible)
+            if (isInBuffer) 
                 _lightManager.UpdateLightInBuffer(_thisLight, lightID);
         }
-
+        //we are NOT in the view frustum
         if (Camera.main != null && !GeometryUtility.TestPlanesAABB(
             GeometryUtility.CalculateFrustumPlanes(Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix), lightBounds))
         {
+            //remove the light only if it is marked as visible, that way we don't inadvertently leave nonvisible lights in the array
             if (isVisible)
             {
                 isVisible = false;

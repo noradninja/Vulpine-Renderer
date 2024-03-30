@@ -42,7 +42,7 @@
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-				const half2 offset = _MainTex_TexelSize.xy * 0.1h;
+				const half2 offset = _MainTex_TexelSize.xy * 0.25h;
 				o.uv1 = half4(v.uv + offset, v.uv + offset);
 				return o;
 			}
@@ -52,8 +52,8 @@
 				// sample the texture
 				half4 col = tex2D(_MainTex, i.uv);
 				half2 texsize = half4(_TextureSize.x, _TextureSize.y,0,0).xy;
-				half dx = pow(texsize.x, -1.0h) * 0.2h;
-				half dy = pow(texsize.y, -1.0h) * 0.2h;
+				half dx = pow(texsize.x, -1.0h) * 0.25h;
+				half dy = pow(texsize.y, -1.0h) * 0.25h;
 				half3 dt = half3(1.0h,1.0h,1.0h);
 
 				half3 c00 = tex2D(_MainTex, i.uv1 + half2(-dx, -dy)).xyz;

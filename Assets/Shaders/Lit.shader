@@ -15,15 +15,13 @@
 	    Tags { "RenderType"="Opaque"}
         ZWrite On
 		Blend One OneMinusSrcAlpha //because we are going to clip at the end
-		Cull Back
         LOD 100
-        //Cull Off
         Pass
         {
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma target 4.5
+            #pragma target 3.0
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "AutoLight.cginc"
@@ -35,19 +33,12 @@
             // Shader Properties
             float _Roughness, _Metalness, _Cutoff;
             half _NormalHeight;
-            sampler2D_half _MainTex, _NormalMap, _MOARMap;
+            sampler2D _MainTex, _NormalMap, _MOARMap;
             
             // Coordinate variables for textures
             float4 _NormalMap_ST;
             float4 _MainTex_ST;
-            
-            // Struct to match C# struct for referencing
-            struct LightData
-            {
-                float4 position;
-                float4 color;
-                float4 variables;
-            };
+ 
             // Struct for Vertex Input
             struct appdata
             {
@@ -60,20 +51,18 @@
             // Struct for Vertex Output
             struct v2f
             {
-                float4 vertex : SV_POSITION;
+                float4 vertex : POSITION;
                 float4 color : COLOR;
                 float3 worldPos : TEXCOORD0;
                 float3 normal : TEXCOORD1;
                 float4 tangent : TEXCOORD2;
                 float2 uv: TEXCOORD3;
-            	LIGHTING_COORDS(4,5)
-                
             };
             
             // Global Directional Lights Buffer
-                StructuredBuffer<LightData> _DirectionalLightsBuffer;
+                float4x4 _DirectionalLightsBuffer[4];
             // Global Point/Spot Lights Buffer
-                StructuredBuffer<LightData> _PointSpotLightsBuffer;
+                float4x4 _PointSpotLightsBuffer[8];
             
             // Vertex Shader
             v2f vert(appdata v)
@@ -118,36 +107,41 @@
                 half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(normal));
                 // Add a tiny value to albedo to eliminate absolute blacks
                 albedo.rgb += 0.1f;
-                float shadow = LIGHT_ATTENUATION(i);
+                float shadow = 1;
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
                 {
-                    // Calculate array index for the current light
-                    int arrayIndex = j;
                     // Extract LightData using array indices from the global buffer
-                    LightData light = _DirectionalLightsBuffer[arrayIndex];
+                    float4 position = _DirectionalLightsBuffer[j][0];
+                    float4 rotation = _DirectionalLightsBuffer[j][1];
+                    float4 color = _DirectionalLightsBuffer[j][2];
+                    float4 variables = _DirectionalLightsBuffer[j][3];
+
+                   
                     // Add directional light contribution
-                    accumColor += LightAccumulation(
+                    accumColor = accumColor + LightAccumulation(
                             i.normal, normal, viewDir, albedo, MOAR,
-                            light.color.rgb * _Metalness, _Roughness, _Metalness,
-                            i.worldPos, light.position, light.color,
-                            light.variables.x, light.variables.y,
+                            color.rgb * _Metalness, _Roughness, _Metalness,
+                            i.worldPos, position, color,
+                            variables.x, variables.y,
                             0.0, 0.0, grazingAngle, reflection, _Cutoff, shadow
                         );
                 }
                 // Loop over point/spot lights
                 for (int k = 0; k < 8; ++k)
                 {
-                    // Calculate array index for the current light
-                    int arrayIndexPS = k;
                     // Extract LightData using array indices from the global buffer
-                    LightData pointSpotLight = _PointSpotLightsBuffer[arrayIndexPS];
+                    float4 position = _PointSpotLightsBuffer[k][0];
+                    float4 rotation = _PointSpotLightsBuffer[k][1];
+                    float4 color = _PointSpotLightsBuffer[k][2];
+                    float4 variables = _PointSpotLightsBuffer[k][3];
+                    
                     // Add point/spot light contribution
-                    accumColor += LightAccumulation(
+                    accumColor = accumColor + LightAccumulation(
                             i.normal, normal, viewDir, albedo, MOAR,
-                            pointSpotLight.color.rgb * _Metalness, _Roughness, _Metalness,
-                            i.worldPos, pointSpotLight.position, pointSpotLight.color,
-                            pointSpotLight.variables.x, pointSpotLight.variables.y,
+                            color.rgb * _Metalness, _Roughness, _Metalness,
+                            i.worldPos, position, color,
+                            variables.x, variables.y,
                             2.0, 45.0, grazingAngle, reflection, _Cutoff, shadow
                         );
                 }
@@ -156,59 +150,6 @@
             }
             ENDCG
         }
-//		//  Shadow rendering pass
-//        Pass{
-//            Tags {"LightMode"="ShadowCaster"}
-//
-//            CGPROGRAM
-//            #pragma vertex vert
-//            #pragma fragment frag
-//			#pragma target 3.0
-//            #pragma multi_compile_shadowcaster
-//			#pragma multi_compile_fog
-//			#pragma multi_compile _ LOD_FADE_CROSSFADE
-//            #include "UnityCG.cginc"
-//			#include "UnityPBSLighting.cginc" // TBD: remove
-//			
-//			struct v2f {
-//				V2F_SHADOW_CASTER;
-//				half2  uv : TEXCOORD0;
-//				UNITY_VERTEX_OUTPUT_STEREO
-//			};
-//			struct appdata {
-//				half3 vertex : POSITION;
-//				half3 uv : TEXCOORD0;
-//				
-//
-//			};
-//			sampler2D_half _MainTex, _MOARMap;
-//            float4 _MainTex_ST;
-//            float _Cutoff;
-//			
-//						
-//			v2f vert( appdata v )
-//			{
-//				v2f o;
-//				half3 worldPos = mul (unity_ObjectToWorld, half4(v.vertex, 1) ).xyz;
-//				UNITY_SETUP_INSTANCE_ID(v);
-//				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-//				TRANSFER_SHADOW_CASTER(o);
-//				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-//				return o;
-//			}
-//            
-//			half4 frag( v2f i ) : SV_Target
-//			{
-//			
-//				fixed4 texcol = tex2D( _MOARMap, i.uv );
-//				
-//		
-//					clip(texcol.b - _Cutoff );
-//						
-//				SHADOW_CASTER_FRAGMENT(i);
-//			}
-//            ENDCG
-//        }
     }
     FallBack "Diffuse"
 }

@@ -1,63 +1,59 @@
 ﻿#include <UnityCG.cginc>
-#include <UnityLightingCommon.cginc>
 #include "LightingCalculations.cginc"
 
-//local varyings
-float3 lightDir;
-float attenuation;
-
-// Decode RGBM encoded HDR values from a cubemap
-float3 DecodeHDR(in float4 rgbm)
+//initialize local varyings 
+half3 lightDir;
+half attenuation;
+half fallOff = 1.0;
+// lighting equation loop for one light, yes this is a lot of inputs, no we don't use them all yet, but I don't want to have to keep extending is
+half4 LightAccumulation(half3 vertNormal, half3 normal, half3 viewDir, half4 albedo, half4 MOAR, float3 specularColor, half roughness,
+                         half metalness, half3 worldPosition, half4 lightPosition, float3 lightColor, half range, half intensity,
+                         half lightType, half spotAngle, half3 grazingAngle, half3 reflection, half cutOff, half shadow)
 {
-    return rgbm.rgb * rgbm.a * 16.0;
-}
-
-// Loop for one light
-float4 LightAccumulation(float3 vertNormal, float3 normal, float3 viewDir, float4 albedo, float4 MOAR, float3 specularColor, float roughness,
-                         float metalness, float3 worldPosition, float4 lightPosition, float3 lightColor, float range, float intensity,
-                         float lightType, float spotAngle, float3 grazingAngle, float3 reflection, float cutOff, float shadow)
-{
-    half fallOff = 1.0;
-    intensity *= 0.1; // compensate for inspector intensity range, should replace this with an approximation for lux and temp
+    intensity *= 1; // compensate for inspector intensity range, should replace this with an approximation for lux and temp
     if (lightType < 0.5) // directional light
     {
+        //calc direction
         lightDir = normalize(lightPosition);
     }
     else // point/spot light
     {
-        float3 vertexToLightSource = lightPosition - worldPosition;
+        //get the vector from the surface to the light
+        half3 vertexToLightSource = lightPosition - worldPosition;
+        //calc distance, direction, and normalized distance
         half lightDst = dot(vertexToLightSource, vertexToLightSource);
         lightDir = normalize(vertexToLightSource);
         half normalizedDist = lightDst / range * range;
+        //calc falloff/attenuation using normalized distance from light to surface
         fallOff = saturate(1.0 / (1.0 + 25.0 * normalizedDist * normalizedDist) * saturate((1 - normalizedDist) * 5.0));
     }
-    //Decompose MOAR into values
+    //Decompose MOAR into channel values
     metalness = MOAR.r * metalness;
     half occlusion = MOAR.g;
     half alpha = MOAR.b;
     roughness = MOAR.a * roughness;
-    
-   
     // Use the alpha channel of albedo to choose between four material types
     half materialSelection = albedo.a;
+    //initialize diffuse and spec terms
     half3 diff = 1;
     half3 spec = 1;
-    if (materialSelection == 1) // Disney/GGX
+    //spin through the options for material types stored in albedo alpha
+    if (materialSelection == 1) // Disney/GGX if white
     {
         diff = DisneyDiffuse(dot(normal, lightDir), albedo);
         spec = GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, lightColor, roughness, grazingAngle);
     }
-    else if (materialSelection == 0) // Disney/retroreflective
+    else if (materialSelection == 0) // Disney/retroreflective if black
     {
         diff = DisneyDiffuse(dot(normal, lightDir), albedo);
         spec = RetroreflectiveSpecular(viewDir,normal, roughness,  grazingAngle);
     }
-    else if (materialSelection <=0.5 && materialSelection> 0 ) // Disney/Anisotropic
+    else if (materialSelection <=0.5 && materialSelection> 0 ) // Disney/Anisotropic if 0.5 grey
     {
         diff = DisneyDiffuse(dot(normal, lightDir), albedo);
         spec = AnisotropicSpecular(viewDir, worldPosition, normal, lightPosition, roughness,  grazingAngle);
     }
-    else // Subsurface scattering/GGX
+    else // Subsurface scattering/GGX for everything else
     {
         diff = SubsurfaceScatteringDiffuse(vertNormal, viewDir, lightDir, worldPosition, lightPosition, lightColor, albedo, roughness);
         spec = GGXSpecular(normal, viewDir, lightDir, worldPosition, lightPosition, lightColor, roughness, grazingAngle);
@@ -69,11 +65,10 @@ float4 LightAccumulation(float3 vertNormal, float3 normal, float3 viewDir, float
     half4 skyData = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, reflection, roughness * 8);
     // Cubemap is stored HDR- the multiplier is to compensate for gamma screens, and is not physically accurate. 
     half3 skyColor = DecodeHDR (skyData, unity_SpecCube0_HDR) * 0.05;            
-
     // Lighting model
-    half3 combinedLight = (diff + spec) * (lightColor * shadow * fallOff * intensity);
-    // Final BRDF   
-    float3 combinedColor = ((albedo * combinedLight * occlusion) + (skyColor * FR * metalness) + (albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb * 0.1)));
+    float3 combinedLight = (diff + spec) * (lightColor * shadow * fallOff * intensity);
+    // Final BRDF = COLOR & LIGHT + FRESNEL REFLECTION & METALNESS + AMBIENT LIGHT & ALBEDO MIX 
+    half3 combinedColor = ((albedo * combinedLight * occlusion) + (skyColor * FR * metalness) + (albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb * 0.1)));
     clip( alpha - cutOff );
     return half4(combinedColor, alpha);
 }

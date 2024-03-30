@@ -1,175 +1,145 @@
 ﻿using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
-using UnityEngine.Serialization;
 
+[ExecuteInEditMode]
 public class LightManager : MonoBehaviour
 {
-    [ExecuteInEditMode]
-    [System.Serializable]
+
+    [System.Serializable] //so we can see the struct data in the inspector for comparison
     public struct LightData
     {
         public Vector4 position;
+        public Vector4 rotation;
         public Vector4 color;
         public Vector4 variables;
     }
-
-    public struct AtlasData
-    {
-        public Vector4 quad0;
-        public Vector4 quad1;
-        public Vector4 quad2;
-        public Vector4 quad3;
-    }
-   
+    //constants for setting array sizes
     private const int MaxPointSpotLights = 8;
     private const int MaxDirectionalLights = 4;
-    private const int MaxLightsTotal = MaxDirectionalLights + MaxPointSpotLights; //just in case we need it at some point
-    //3 vec4 == 12 floats * 4 bytes == 48 bytes * 8 lights == 384 bytes/frame for 8 lights total 
-    private const int LightDataSize = sizeof(float) * 12;
-    //4 vec4 == 16 floats * 4 bytes == 64 bytes bytes/frame for 4 cookies total 
-    private const int atlasDataSize = sizeof(float) * 16;
-    private ComputeBuffer directionalLightsBuffer;
-    private ComputeBuffer pointSpotLightsBuffer;
-
-    private ComputeBuffer pointSpotAtlasBuffer;
-    // Separate arrays for directional and point/spot lights
+    //separate arrays for directional and point/spot lights structs
     public LightData[] directionalLightsArray = new LightData[MaxDirectionalLights];
     public LightData[] pointSpotLightsArray = new LightData[MaxPointSpotLights];
+    //these ints and arrays hold the information that will be transferred to the GPU once we have populated them
     public int numActiveDirectionalLights;
     public int numActivePointSpotLights;
-    public Texture2D spotShapeCookie;
-    public Texture2D flashlightShapeCookie;
-    
+    public Matrix4x4[] directionalLightsBuffer;
+    public Matrix4x4[] pointSpotLightsBuffer;
 
     private void Start()
     {
-        directionalLightsBuffer = new ComputeBuffer(MaxDirectionalLights, LightDataSize, ComputeBufferType.Default);
-        pointSpotLightsBuffer = new ComputeBuffer(MaxPointSpotLights, LightDataSize, ComputeBufferType.Default);
-
-        UpdateBuffer();
-        SendBufferToGPU();
-    }
-
-
-
-    private void OnDestroy()
-    {
-        directionalLightsBuffer.Release();
-        pointSpotLightsBuffer.Release();
-
+        directionalLightsBuffer = new Matrix4x4[MaxDirectionalLights];
+        pointSpotLightsBuffer = new Matrix4x4[MaxPointSpotLights];
     }
 
     public void OnVisible(Light visibleLight)
     {
-        LightData data = new LightData();
-        
-       
+        //pack light info into a struct
+        LightData data;
+        data = new LightData();
         data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, visibleLight.intensity);
-        data.color = visibleLight.color.linear;
+        data.color = visibleLight.color;
+        data.rotation = new Vector4(visibleLight.transform.rotation.x, visibleLight.transform.rotation.y,
+            visibleLight.transform.rotation.z, 1);
         data.variables.x = visibleLight.range;
         data.variables.y = visibleLight.intensity;
         data.variables.z = 1;
         data.variables.w = visibleLight.GetComponent<LightVisibility>().lightID;
-
-
-        if (visibleLight.type == UnityEngine.LightType.Directional)
-            AddDirectionalLightToArray(data, visibleLight);
-        else if (visibleLight.type == UnityEngine.LightType.Point ||
-                 visibleLight.type == UnityEngine.LightType.Spot)
-            AddPointSpotLightToArray(data, visibleLight);
-
+        //sort into array based on type
+        switch (visibleLight.type)
+        {
+            case UnityEngine.LightType.Directional:
+                AddDirectionalLightToArray(data, visibleLight);
+                break;
+            case UnityEngine.LightType.Point:
+            case UnityEngine.LightType.Spot:
+                AddPointSpotLightToArray(data, visibleLight);
+                break;
+        }
+        //set flags and send new data to array
         visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
-
         UpdateBuffer();
-        SendBufferToGPU();
     }
 
     public void OnNotVisible(Light nonVisibleLight)
     {
+        //use the transform to remove from light, should change this to light id
         Vector4 nvLtransform = new Vector4(nonVisibleLight.transform.position.x, nonVisibleLight.transform.position.y,
             nonVisibleLight.transform.position.z, 1);
-
-        if (nonVisibleLight.type == UnityEngine.LightType.Directional)
-            RemoveDirectionalLightFromArray(nvLtransform);
-        else if (nonVisibleLight.type == UnityEngine.LightType.Point || nonVisibleLight.type == UnityEngine.LightType.Point)
-            RemovePointSpotLightFromArray(nvLtransform);
-
+        //get type to remove from appropriate array
+        switch (nonVisibleLight.type)
+        {
+            case UnityEngine.LightType.Directional:
+                RemoveDirectionalLightFromArray(nvLtransform);
+                break;
+            default:
+            {
+                RemovePointSpotLightFromArray(nvLtransform);
+                break;
+            }
+        }
+        //set flags and send new data to array
         nonVisibleLight.GetComponent<LightVisibility>().isInBuffer = false;
         nonVisibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = true;
-
-        nonVisibleLight.intensity = 0;
-
         UpdateBuffer();
-        SendBufferToGPU();
     }
 
     private void AddDirectionalLightToArray(LightData newLight, Light directionalLight)
     {
-        if (numActiveDirectionalLights < MaxDirectionalLights)
-        {
-            directionalLightsArray[numActiveDirectionalLights] = newLight;
-            numActiveDirectionalLights++;
-            DebugData(directionalLightsArray, "sent directionalLightsArray");
-        }
+        if (numActiveDirectionalLights >= MaxDirectionalLights) return;
+        directionalLightsArray[numActiveDirectionalLights] = newLight;
+        numActiveDirectionalLights++;
+        //DebugData(directionalLightsArray, "sent directionalLightsArray");
     }
 
     private void AddPointSpotLightToArray(LightData newLight, Light pointSpotLight)
     {
-        if (numActivePointSpotLights < MaxPointSpotLights)
-        {
-            pointSpotLightsArray[numActivePointSpotLights] = newLight;
-            //pointSpotCookieTextures[numActivePointSpotLights] = pointSpotLight.cookie != null ? pointSpotLight.cookie : cookiePlaceholder;
-            numActivePointSpotLights++;
-            DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
-        }
+        if (numActivePointSpotLights >= MaxPointSpotLights) return;
+        pointSpotLightsArray[numActivePointSpotLights] = newLight;
+        numActivePointSpotLights++; 
+        //DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
     }
 
     private void RemoveDirectionalLightFromArray(Vector4 lightPosition)
     {
         int indexToRemove = -1;
-
+        //loop till we find the light and grab it's index
         for (int i = 0; i < numActiveDirectionalLights; i++)
         {
-            if (directionalLightsArray[i].position == lightPosition)
-            {
-                indexToRemove = i;
-                break;
-            }
+            if (directionalLightsArray[i].position != lightPosition) continue;
+            indexToRemove = i;
+            break;
         }
-
-        if (indexToRemove != -1)
+        //if we found our index, reorder our array to 'remove' the light
+        if (indexToRemove == -1) return;
         {
             for (int i = indexToRemove; i < numActiveDirectionalLights - 1; i++)
             {
                 directionalLightsArray[i] = directionalLightsArray[i + 1];
             }
             numActiveDirectionalLights--;
-            DebugData(directionalLightsArray, "sent directionalLightsArray");
+            //  DebugData(directionalLightsArray, "sent directionalLightsArray");
         }
     }
 
     private void RemovePointSpotLightFromArray(Vector4 lightPosition)
     {
         int indexToRemove = -1;
-
+        //loop till we find the light and grab it's index
         for (int i = 0; i < numActivePointSpotLights; i++)
         {
-            if (pointSpotLightsArray[i].position == lightPosition)
-            {
-                indexToRemove = i;
-                break;
-            }
+            if (pointSpotLightsArray[i].position != lightPosition) continue;
+            indexToRemove = i;
+            break;
         }
-
-        if (indexToRemove != -1)
+        //if we found our index, reorder our array to 'remove' the light
+        if (indexToRemove == -1) return;
         {
             for (int i = indexToRemove; i < numActivePointSpotLights - 1; i++)
             {
                 pointSpotLightsArray[i] = pointSpotLightsArray[i + 1];
             }
             numActivePointSpotLights--;
-            DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
+            //  DebugData(pointSpotLightsArray, "sent pointSpotLightsArray");
         }
     }
 
@@ -177,83 +147,72 @@ public class LightManager : MonoBehaviour
     {
         if (lightToUpdate.type == UnityEngine.LightType.Directional) //directional light
         {
+            //loop the array
             for (int i = 0; i < numActiveDirectionalLights - 1; i++)
             {
-                if (directionalLightsArray[i].variables.w == lightID)
-                {
-                    directionalLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x, lightToUpdate.transform.position.y,
-                        lightToUpdate.transform.position.z, 1);
-                    directionalLightsArray[i].color = lightToUpdate.color.linear;
-                    directionalLightsArray[i].variables.x = lightToUpdate.range;
-                    directionalLightsArray[i].variables.y = lightToUpdate.intensity;
-                    directionalLightsArray[i].variables.z = 1;
-                    directionalLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID; 
-                }
+                //we are looking for the element with our lightID
+                if (directionalLightsArray[i].variables.w != lightID) continue;
+                //we found it, so let's update that element
+                directionalLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x, lightToUpdate.transform.position.y,
+                    lightToUpdate.transform.position.z, 1);
+                directionalLightsArray[i].color = lightToUpdate.color;
+                directionalLightsArray[i].variables.x = lightToUpdate.range;
+                directionalLightsArray[i].variables.y = lightToUpdate.intensity;
+                directionalLightsArray[i].variables.z = 1;
+                directionalLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
             }
         }
         else //point/spot
         {
+            //loop the array
             for (int i = 0; i < numActivePointSpotLights - 1; i++)
             {
-                if (pointSpotLightsArray[i].variables.w == lightID)
-                {
-                    pointSpotLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x,
-                        lightToUpdate.transform.position.y,
-                        lightToUpdate.transform.position.z, 1);
-                    pointSpotLightsArray[i].color = lightToUpdate.color.linear;
-                    pointSpotLightsArray[i].variables.x = lightToUpdate.range;
-                    pointSpotLightsArray[i].variables.y = lightToUpdate.intensity;
-                    pointSpotLightsArray[i].variables.z = 1;
-                    pointSpotLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
-                }
+                //we are looking for the element with our lightID
+                if (pointSpotLightsArray[i].variables.w != lightID) continue;
+                //we found it, so let's update that element
+                pointSpotLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x,
+                    lightToUpdate.transform.position.y,
+                    lightToUpdate.transform.position.z, 1);
+                pointSpotLightsArray[i].color = lightToUpdate.color;
+                pointSpotLightsArray[i].variables.x = lightToUpdate.range;
+                pointSpotLightsArray[i].variables.y = lightToUpdate.intensity;
+                pointSpotLightsArray[i].variables.z = 1;
+                pointSpotLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
             }  
         }
+        //now we can update the buffer contents
         UpdateBuffer();
     }
 
     private void UpdateBuffer()
     {
-        //set the data in the light buffers
-        directionalLightsBuffer.SetData(directionalLightsArray);
-        pointSpotLightsBuffer.SetData(pointSpotLightsArray);
-        //pack 4 pointSpot cookies into an atlas
-        //atlasTextures(pointSpotCookieTextures, 512, 512);
+        // loop directional lights, and set the columns in each light's 4x4 matrix with that light's values we stored in the array
+        for (int i = 0; i < numActiveDirectionalLights; i++)
+        {
+            directionalLightsBuffer[i].SetColumn(0, directionalLightsArray[i].position);
+            directionalLightsBuffer[i].SetColumn(1, directionalLightsArray[i].color);
+            directionalLightsBuffer[i].SetColumn(2, directionalLightsArray[i].rotation);
+            directionalLightsBuffer[i].SetColumn(3, directionalLightsArray[i].variables);
+        }
+        // loop point and spot lights, and set the columns in each light's 4x4 matrix with that light's values we stored in the array
+        for (int i = 0; i < numActivePointSpotLights; i++)
+        {
+            pointSpotLightsBuffer[i].SetColumn(0, pointSpotLightsArray[i].position);
+            pointSpotLightsBuffer[i].SetColumn(1, pointSpotLightsArray[i].color);
+            pointSpotLightsBuffer[i].SetColumn(2, pointSpotLightsArray[i].rotation);
+            pointSpotLightsBuffer[i].SetColumn(3, pointSpotLightsArray[i].variables);
+        }
+        //set the global buffers so shaders can access the data
+        SendBufferToGPU();
     }
 
     private void SendBufferToGPU()
     {
-        //send the light data to the GPU
-        Shader.SetGlobalBuffer("_DirectionalLightsBuffer", directionalLightsBuffer);
-        Shader.SetGlobalBuffer("_PointSpotLightsBuffer", pointSpotLightsBuffer);
+        //send the light data to the GPU in global arrays
+        Shader.SetGlobalMatrixArray("_DirectionalLightsBuffer", directionalLightsBuffer);
+        Shader.SetGlobalMatrixArray("_PointSpotLightsBuffer", pointSpotLightsBuffer);
         //we need the number of objects in each array to iterate them in the shader
         Shader.SetGlobalInt("_NumDirectionalLights", numActiveDirectionalLights);
         Shader.SetGlobalInt("_NumPointSpotLights", numActivePointSpotLights);
-        //send the spot cookie textures to a pair of global slots on the GPU
-        Shader.SetGlobalTexture("_spotShapeCookie", spotShapeCookie);
-        Shader.SetGlobalTexture("_flashlightShapeCookie", flashlightShapeCookie);
-    }
-    
-    private void atlasTextures(Texture[] texturesToAtlas, int atlasWidth, int atlasHeight)
-    {
-        //here, I want to use Testure2D.PackTextures to take the  input textures and pack them to an output texture to pass to the GPU in a global texture
-        //I also want to use Texture2D.GenerateAtlas to place the UV offsets for each of the four textures in the atlas into an AtlasData struct to send to the GPU in a global buffer 
-    }
-    
-    //disabled to keep console clean
-    private void DebugData(LightData[] lightDatas, string arrayName)
-    {
-        // Debug.Log("Debugging Data from " + arrayName + ":");
-        //
-        // for (int i = 0; i < MaxLightsTotal; i++)
-        // {
-        //     if (i < lightDatas.Length)
-        //         Debug.Log("Light " + (i + 1) + ": " +
-        //                   "Position: " + lightDatas[i].position +
-        //                   ", Color: " + lightDatas[i].color +
-        //                   ", Range: " + lightDatas[i].variables.x +
-        //                   ", Intensity: " + lightDatas[i].variables.y);
-        //     else
-        //         Debug.Log("Light " + (i + 1) + ": Inactive");
-        // }
     }
 }

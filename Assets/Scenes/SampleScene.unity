@@ -38,13 +38,13 @@ RenderSettings:
   m_ReflectionIntensity: 0.5
   m_CustomReflection: {fileID: 8900000, guid: ccf9ae2d32732ba479646b0b3fb2e7a9, type: 3}
   m_Sun: {fileID: 170076734}
-  m_IndirectSpecularColor: {r: 0.09575709, g: 0.15812522, b: 0.25963318, a: 0.5}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 11
-  m_GIWorkflowMode: 0
+  m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -53,7 +53,7 @@ LightmapSettings:
     m_TemporalCoherenceThreshold: 1
     m_EnvironmentLightingMode: 0
     m_EnableBakedLightmaps: 0
-    m_EnableRealtimeLightmaps: 1
+    m_EnableRealtimeLightmaps: 0
   m_LightmapEditorSettings:
     serializedVersion: 10
     m_Resolution: 2
@@ -237,7 +237,7 @@ GameObject:
   - component: {fileID: 41810145}
   - component: {fileID: 41810147}
   m_Layer: 0
-  m_Name: Magenta_Light
+  m_Name: Magenta_Light_P
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -253,8 +253,8 @@ Light:
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 1, g: 0, b: 1, a: 1}
-  m_Intensity: 1
-  m_Range: 1
+  m_Intensity: 16
+  m_Range: 0.5
   m_SpotAngle: 30
   m_CookieSize: 10
   m_Shadows:
@@ -287,7 +287,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 41810144}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.473, y: -0.21, z: -0.569}
+  m_LocalPosition: {x: -0.482, y: -0.175, z: -0.534}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 212150533}
@@ -304,14 +304,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightID: 1
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  lightID: 3
+  _thisLight: {fileID: 41810145}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
-  frameInterval: 1
+  frameInterval: 0
 --- !u!1 &45732367
 GameObject:
   m_ObjectHideFlags: 0
@@ -699,7 +699,7 @@ GameObject:
   - component: {fileID: 116952895}
   - component: {fileID: 116952897}
   m_Layer: 0
-  m_Name: Yellow_Light
+  m_Name: White Light_S
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -714,9 +714,9 @@ Light:
   m_Enabled: 1
   serializedVersion: 8
   m_Type: 0
-  m_Color: {r: 1, g: 0.9843749, b: 0, a: 1}
-  m_Intensity: 1
-  m_Range: 2
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 16
+  m_Range: 100
   m_SpotAngle: 45
   m_CookieSize: 10
   m_Shadows:
@@ -749,7 +749,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 116952894}
   m_LocalRotation: {x: 0.4718822, y: 0.50715435, z: -0.2138839, w: 0.6887491}
-  m_LocalPosition: {x: -0.666, y: 0.754, z: -0.025999993}
+  m_LocalPosition: {x: -1.22, y: 1.454, z: -0.025999993}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 212150533}
@@ -766,14 +766,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightID: 3
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  lightID: 1
+  _thisLight: {fileID: 116952895}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
-  frameInterval: 1
+  frameInterval: 0
 --- !u!1 &123193105
 GameObject:
   m_ObjectHideFlags: 0
@@ -1068,7 +1068,7 @@ GameObject:
   - component: {fileID: 170076734}
   - component: {fileID: 170076736}
   m_Layer: 0
-  m_Name: Rim Light
+  m_Name: Orange_Light_D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1083,8 +1083,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 8
   m_Type: 1
-  m_Color: {r: 1, g: 0.60732985, b: 0, a: 1}
-  m_Intensity: 2
+  m_Color: {r: 1, g: 0.6457233, b: 0, a: 1}
+  m_Intensity: 16
   m_Range: 10
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -1117,13 +1117,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 170076733}
-  m_LocalRotation: {x: 0.108765796, y: 0.4532133, z: -0.20646508, w: 0.86031383}
-  m_LocalPosition: {x: -0.925, y: 0.229, z: -0.406}
+  m_LocalRotation: {x: 0.3528068, y: 0.8336617, z: -0.08606406, w: 0.41608742}
+  m_LocalPosition: {x: -0.942, y: 0.596, z: 0.664}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 21.980001, y: 52.420002, z: -16.068}
+  m_RootOrder: 3
+  m_LocalEulerAnglesHint: {x: 25.919, y: 135.266, z: 35.057003}
 --- !u!114 &170076736
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1135,12 +1135,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightID: 0
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  lightID: 1
+  _thisLight: {fileID: 170076734}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
   frameInterval: 0
 --- !u!1 &178740335
@@ -1602,7 +1602,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 212150531}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: -0.026, y: -0.096437216, z: -0.469}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -1614,7 +1614,7 @@ Transform:
   - {fileID: 2111455748}
   m_Father: {fileID: 0}
   m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &215906188
 GameObject:
   m_ObjectHideFlags: 0
@@ -3510,7 +3510,7 @@ GameObject:
   - component: {fileID: 439001888}
   - component: {fileID: 439001890}
   m_Layer: 0
-  m_Name: Green_Light
+  m_Name: Green_Light_P
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3526,8 +3526,8 @@ Light:
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 0, g: 1, b: 0.1953125, a: 1}
-  m_Intensity: 1
-  m_Range: 1
+  m_Intensity: 16
+  m_Range: 0.5
   m_SpotAngle: 30
   m_CookieSize: 10
   m_Shadows:
@@ -3560,7 +3560,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 439001887}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.537, y: -0.20999998, z: -0.568}
+  m_LocalPosition: {x: 0.487, y: -0.17500001, z: -0.533}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 212150533}
@@ -3577,14 +3577,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightID: 2
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  lightID: 4
+  _thisLight: {fileID: 439001888}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
-  frameInterval: 1
+  frameInterval: 0
 --- !u!1 &449038953
 GameObject:
   m_ObjectHideFlags: 0
@@ -4081,7 +4081,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 534669902}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d29bc3d2a90e3d41b33dd3e8cc09c13, type: 3}
   m_Name: 
@@ -7061,8 +7061,6 @@ GameObject:
   - component: {fileID: 1094317693}
   - component: {fileID: 1094317696}
   - component: {fileID: 1094317695}
-  - component: {fileID: 1094317694}
-  - component: {fileID: 1094317697}
   m_Layer: 0
   m_Name: Sphere (1)
   m_TagString: Untagged
@@ -7083,18 +7081,6 @@ Transform:
   m_Father: {fileID: 1563475151}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 70, z: 0}
---- !u!135 &1094317694
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1094317692}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 0
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1094317695
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7137,20 +7123,6 @@ MeshFilter:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1094317692}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &1094317697
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1094317692}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8895531ad784ef1b340b0927d82d1c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  renderMat: {fileID: 2100000, guid: 057acba906435f34da2e1a445d876214, type: 2}
-  value: 0
-  calcValue: 0
 --- !u!1 &1099461609
 GameObject:
   m_ObjectHideFlags: 0
@@ -8477,59 +8449,235 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   directionalLightsArray:
+  - position: {x: -0.942, y: 0.596, z: 0.664, w: 16}
+    rotation: {x: 0.3528068, y: 0.8336617, z: -0.08606406, w: 1}
+    color: {x: 1, y: 0.6457233, z: 0, w: 1}
+    variables: {x: 10, y: 16, z: 1, w: 1}
   - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
+    rotation: {x: 0, y: 0, z: 0, w: 0}
     color: {x: 0, y: 0, z: 0, w: 0}
     variables: {x: 0, y: 0, z: 0, w: 0}
   pointSpotLightsArray:
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  numActiveDirectionalLights: 0
-  numActivePointSpotLights: 0
-  spotShapeCookie: {fileID: 0}
-  flashlightShapeCookie: {fileID: 0}
+  - position: {x: -1.246, y: 1.3575628, z: -0.495, w: 16}
+    rotation: {x: 0.4718822, y: 0.50715435, z: -0.2138839, w: 1}
+    color: {x: 1, y: 1, z: 1, w: 1}
+    variables: {x: 100, y: 16, z: 1, w: 1}
+  - position: {x: 0.461, y: -0.27143723, z: -1.002, w: 16}
+    rotation: {x: -0, y: -0, z: -0, w: 1}
+    color: {x: 0, y: 1, z: 0.1953125, w: 1}
+    variables: {x: 1, y: 16, z: 1, w: 4}
+  - position: {x: 0.498, y: -0.27143723, z: 0.095, w: 16}
+    rotation: {x: -0, y: -0, z: -0, w: 1}
+    color: {x: 1, y: 0, z: 0.0234375, w: 1}
+    variables: {x: 1, y: 16, z: 1, w: 5}
+  - position: {x: -0.463, y: -0.27143723, z: 0.174, w: 16}
+    rotation: {x: -0, y: -0, z: -0, w: 1}
+    color: {x: 0.1171875, y: 0, z: 1, w: 1}
+    variables: {x: 1, y: 16, z: 1, w: 6}
+  - position: {x: 0.87799996, y: 0.7885628, z: -0.17200002, w: 16}
+    rotation: {x: 0.44868574, y: -0.5963251, z: 0.14432597, w: 1}
+    color: {x: 0.8280289, y: 1, z: 0, w: 1}
+    variables: {x: 100, y: 16, z: 1, w: 2}
+  - position: {x: -0.508, y: -0.27143723, z: -1.003, w: 16}
+    rotation: {x: -0, y: -0, z: -0, w: 1}
+    color: {x: 1, y: 0, z: 1, w: 1}
+    variables: {x: 1, y: 16, z: 1, w: 3}
+  numActiveDirectionalLights: 1
+  numActivePointSpotLights: 6
+  directionalLightsBuffer:
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  pointSpotLightsBuffer:
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
+  - e00: 0
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 0
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 0
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 0
 --- !u!4 &1317738736
 Transform:
   m_ObjectHideFlags: 0
@@ -8640,7 +8788,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1337348644}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8be350d84eef394bb2c0c982bc18c00, type: 3}
   m_Name: 
@@ -8652,14 +8800,14 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1337348644}
-  m_LocalRotation: {x: 0, y: -0.28142038, z: 0, w: 0.9595846}
+  m_LocalRotation: {x: -0, y: -0.9342668, z: 0, w: -0.35657477}
   m_LocalPosition: {x: -0.007, y: 0, z: -0.493}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 534669905}
   m_Father: {fileID: 0}
   m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: -32.69, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -941.78, z: 0}
 --- !u!1 &1359619794
 GameObject:
   m_ObjectHideFlags: 0
@@ -10453,7 +10601,7 @@ Transform:
   - {fileID: 1774662169}
   - {fileID: 701092082}
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1565651756
 GameObject:
@@ -12255,7 +12403,7 @@ GameObject:
   - component: {fileID: 1890968034}
   - component: {fileID: 1890968033}
   m_Layer: 0
-  m_Name: Red_Light (1)
+  m_Name: Red_Light _P
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -12273,13 +12421,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lightID: 5
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  _thisLight: {fileID: 1890968034}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
-  frameInterval: 1
+  frameInterval: 0
 --- !u!108 &1890968034
 Light:
   m_ObjectHideFlags: 0
@@ -12290,8 +12438,8 @@ Light:
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 1, g: 0, b: 0.0234375, a: 1}
-  m_Intensity: 1
-  m_Range: 1
+  m_Intensity: 16
+  m_Range: 0.5
   m_SpotAngle: 30
   m_CookieSize: 10
   m_Shadows:
@@ -12324,7 +12472,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1890968032}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.573, y: -0.20999998, z: 0.587}
+  m_LocalPosition: {x: 0.524, y: -0.17500001, z: 0.564}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 212150533}
@@ -13817,7 +13965,7 @@ GameObject:
   - component: {fileID: 2111455747}
   - component: {fileID: 2111455746}
   m_Layer: 0
-  m_Name: Cyan_Light (1)
+  m_Name: Cyan_Light_P
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13835,13 +13983,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lightID: 6
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  _thisLight: {fileID: 2111455747}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
-  frameInterval: 1
+  frameInterval: 0
 --- !u!108 &2111455747
 Light:
   m_ObjectHideFlags: 0
@@ -13852,8 +14000,8 @@ Light:
   serializedVersion: 8
   m_Type: 2
   m_Color: {r: 0.1171875, g: 0, b: 1, a: 1}
-  m_Intensity: 1
-  m_Range: 1
+  m_Intensity: 16
+  m_Range: 0.5
   m_SpotAngle: 30
   m_CookieSize: 10
   m_Shadows:
@@ -13886,7 +14034,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2111455745}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.48, y: -0.20999998, z: 0.666}
+  m_LocalPosition: {x: -0.437, y: -0.17500001, z: 0.643}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 212150533}
@@ -14243,7 +14391,7 @@ GameObject:
   - component: {fileID: 2133795818}
   - component: {fileID: 2133795820}
   m_Layer: 0
-  m_Name: Blue_Light
+  m_Name: Yellow_Light_S
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -14258,9 +14406,9 @@ Light:
   m_Enabled: 1
   serializedVersion: 8
   m_Type: 0
-  m_Color: {r: 0.5625, g: 0.5, b: 1, a: 1}
-  m_Intensity: 1
-  m_Range: 2
+  m_Color: {r: 0.8280289, g: 1, b: 0, a: 1}
+  m_Intensity: 16
+  m_Range: 100
   m_SpotAngle: 45
   m_CookieSize: 10
   m_Shadows:
@@ -14292,13 +14440,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2133795817}
-  m_LocalRotation: {x: 0.43069008, y: -0.58931947, z: 0.07587262, w: 0.67930263}
-  m_LocalPosition: {x: 0.922, y: 0.698, z: 0.297}
+  m_LocalRotation: {x: 0.44868574, y: -0.5963251, z: 0.14432597, w: 0.6498057}
+  m_LocalPosition: {x: 0.904, y: 0.885, z: 0.297}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 212150533}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 42.420002, y: -95.09701, z: -33.230003}
+  m_LocalEulerAnglesHint: {x: 49.047, y: -100.003006, z: -32.023003}
 --- !u!114 &2133795820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14310,14 +14458,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a8f182dc4e1934782d5864c516a9d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightID: 4
-  _thisLight: {fileID: 0}
-  _lightManager: {fileID: 0}
-  _broadcaster: {fileID: 0}
+  lightID: 2
+  _thisLight: {fileID: 2133795818}
+  _lightManager: {fileID: 1317738735}
+  _broadcaster: {fileID: 1957711919}
   isVisible: 0
-  wasPreviouslyVisible: 0
+  wasPreviouslyVisible: 1
   isInBuffer: 0
-  frameInterval: 1
+  frameInterval: 0
 --- !u!1 &2139527913
 GameObject:
   m_ObjectHideFlags: 0

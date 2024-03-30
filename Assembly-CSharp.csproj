@@ -59,7 +59,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\AnimateRoughness.cs" />
     <Compile Include="Assets\Scripts\FXAA.cs" />
     <Compile Include="Assets\Scripts\Libraries\Lib.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\EventBroadcaster.cs" />
