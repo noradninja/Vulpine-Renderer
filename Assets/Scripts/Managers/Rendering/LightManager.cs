@@ -35,25 +35,32 @@ public class LightManager : MonoBehaviour
         //pack light info into a struct
         LightData data;
         data = new LightData();
-        data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, visibleLight.intensity);
+        data.position = new Vector4(visibleLight.transform.position.x, visibleLight.transform.position.y, visibleLight.transform.position.z, 
+            visibleLight.range);
         data.color = visibleLight.color;
-        data.rotation = new Vector4(visibleLight.transform.rotation.x, visibleLight.transform.rotation.y,
-            visibleLight.transform.rotation.z, 1);
-        data.variables.x = visibleLight.range;
+        data.rotation = new Vector4(visibleLight.transform.rotation.x, visibleLight.transform.rotation.y, visibleLight.transform.rotation.z, 
+            1);
+        data.variables.x = visibleLight.spotAngle;
         data.variables.y = visibleLight.intensity;
-        data.variables.z = 1;
-        data.variables.w = visibleLight.GetComponent<LightVisibility>().lightID;
-        //sort into array based on type
-        switch (visibleLight.type)
+        //set based on light type
+        if (visibleLight.GetComponent<LightVisibility>().lightType == 0) //directional
         {
-            case UnityEngine.LightType.Directional:
-                AddDirectionalLightToArray(data, visibleLight);
-                break;
-            case UnityEngine.LightType.Point:
-            case UnityEngine.LightType.Spot:
-                AddPointSpotLightToArray(data, visibleLight);
-                break;
+            AddDirectionalLightToArray(data, visibleLight);
+            data.variables.z = 0;
         }
+        else if (visibleLight.GetComponent<LightVisibility>().lightType == 1) //point
+        {
+            AddPointSpotLightToArray(data, visibleLight);
+            data.variables.z = 1;
+        }
+        else if (visibleLight.GetComponent<LightVisibility>().lightType == 2) //spot
+        {
+            AddPointSpotLightToArray(data, visibleLight);
+            data.variables.z = 2;
+        }
+
+        data.variables.w = visibleLight.GetComponent<LightVisibility>().lightID;
+        
         //set flags and send new data to array
         visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
@@ -154,11 +161,11 @@ public class LightManager : MonoBehaviour
                 if (directionalLightsArray[i].variables.w != lightID) continue;
                 //we found it, so let's update that element
                 directionalLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x, lightToUpdate.transform.position.y,
-                    lightToUpdate.transform.position.z, 1);
+                    lightToUpdate.transform.position.z, lightToUpdate.range);
                 directionalLightsArray[i].color = lightToUpdate.color;
-                directionalLightsArray[i].variables.x = lightToUpdate.range;
+                directionalLightsArray[i].variables.x = lightToUpdate.spotAngle;
                 directionalLightsArray[i].variables.y = lightToUpdate.intensity;
-                directionalLightsArray[i].variables.z = 1;
+                directionalLightsArray[i].variables.z = directionalLightsArray[i].variables.z;
                 directionalLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
             }
         }
@@ -172,16 +179,17 @@ public class LightManager : MonoBehaviour
                 //we found it, so let's update that element
                 pointSpotLightsArray[i].position = new Vector4(lightToUpdate.transform.position.x,
                     lightToUpdate.transform.position.y,
-                    lightToUpdate.transform.position.z, 1);
+                    lightToUpdate.transform.position.z, lightToUpdate.range);
                 pointSpotLightsArray[i].color = lightToUpdate.color;
-                pointSpotLightsArray[i].variables.x = lightToUpdate.range;
+                pointSpotLightsArray[i].variables.x = lightToUpdate.spotAngle;
                 pointSpotLightsArray[i].variables.y = lightToUpdate.intensity;
-                pointSpotLightsArray[i].variables.z = 1;
+                pointSpotLightsArray[i].variables.z = pointSpotLightsArray[i].variables.z;
                 pointSpotLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
             }  
         }
         //now we can update the buffer contents
         UpdateBuffer();
+        Debug.Log(lightToUpdate + " triggered buffer update");
     }
 
     private void UpdateBuffer()
@@ -189,18 +197,18 @@ public class LightManager : MonoBehaviour
         // loop directional lights, and set the columns in each light's 4x4 matrix with that light's values we stored in the array
         for (int i = 0; i < numActiveDirectionalLights; i++)
         {
-            directionalLightsBuffer[i].SetColumn(0, directionalLightsArray[i].position);
-            directionalLightsBuffer[i].SetColumn(1, directionalLightsArray[i].color);
-            directionalLightsBuffer[i].SetColumn(2, directionalLightsArray[i].rotation);
-            directionalLightsBuffer[i].SetColumn(3, directionalLightsArray[i].variables);
+            directionalLightsBuffer[i].SetRow(0, directionalLightsArray[i].position);
+            directionalLightsBuffer[i].SetRow(1, directionalLightsArray[i].color);
+            directionalLightsBuffer[i].SetRow(2, directionalLightsArray[i].rotation);
+            directionalLightsBuffer[i].SetRow(3, directionalLightsArray[i].variables);
         }
         // loop point and spot lights, and set the columns in each light's 4x4 matrix with that light's values we stored in the array
         for (int i = 0; i < numActivePointSpotLights; i++)
         {
-            pointSpotLightsBuffer[i].SetColumn(0, pointSpotLightsArray[i].position);
-            pointSpotLightsBuffer[i].SetColumn(1, pointSpotLightsArray[i].color);
-            pointSpotLightsBuffer[i].SetColumn(2, pointSpotLightsArray[i].rotation);
-            pointSpotLightsBuffer[i].SetColumn(3, pointSpotLightsArray[i].variables);
+            pointSpotLightsBuffer[i].SetRow(0, pointSpotLightsArray[i].position);
+            pointSpotLightsBuffer[i].SetRow(1, pointSpotLightsArray[i].color);
+            pointSpotLightsBuffer[i].SetRow(2, pointSpotLightsArray[i].rotation);
+            pointSpotLightsBuffer[i].SetRow(3, pointSpotLightsArray[i].variables);
         }
         //set the global buffers so shaders can access the data
         SendBufferToGPU();

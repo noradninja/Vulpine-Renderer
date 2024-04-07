@@ -22,6 +22,7 @@
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
+            //#pragma pack_matrix(row_major)
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "AutoLight.cginc"
@@ -78,10 +79,11 @@
                 return o;
             }
             // Fragment Shader
-            half4 frag(v2f i) : SV_Target
+            half4 frag(v2f i) : COLOR
             {
                 // Initialize accumulated color
                 float4 accumColor = float4(0,0,0,1);
+                float4 grabColor = float4(0,0,0,1);
                 // Prevents multing by zero on nonmetals
                 _Metalness += 0.001;
                
@@ -102,9 +104,9 @@
                 
                 // Per vertex terms- replace i.normal with normal to make these per fragment
                 // Schlick
-                float3 grazingAngle = max (0,pow(1 - dot(i.normal, viewDir), 0.25));
+                float3 grazingAngle = max (0,pow(1 - dot(i.normal, viewDir), 0.35));
                 // Reflection
-                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(normal));
+                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(i.normal));
                 // Add a tiny value to albedo to eliminate absolute blacks
                 albedo.rgb += 0.1f;
                 float shadow = 1;
@@ -112,38 +114,45 @@
                 for (int j = 0; j < 4; ++j)
                 {
                     // Extract LightData using array indices from the global buffer
-                    float4 position = _DirectionalLightsBuffer[j][0];
-                    float4 rotation = _DirectionalLightsBuffer[j][1];
-                    float4 color = _DirectionalLightsBuffer[j][2];
-                    float4 variables = _DirectionalLightsBuffer[j][3];
-
+                    float4 position = _DirectionalLightsBuffer[j][0].xyzw;
+                    float4 color = _DirectionalLightsBuffer[j][1].xyzw;
+                    float4 rotation = _DirectionalLightsBuffer[j][2].xyzw;
+                    color.w = 1;
+                    float4 variables = _DirectionalLightsBuffer[j][3].xyzw;
+                    float3 specColor = color.rgb;
                    
                     // Add directional light contribution
-                    accumColor = accumColor + LightAccumulation(
+                    grabColor = LightAccumulation(
                             i.normal, normal, viewDir, albedo, MOAR,
-                            color.rgb * _Metalness, _Roughness, _Metalness,
-                            i.worldPos, position, color,
-                            variables.x, variables.y,
-                            0.0, 0.0, grazingAngle, reflection, _Cutoff, shadow
+                            specColor, _Roughness, _Metalness,
+                            i.worldPos, position, color.xyz,
+                            position.w, variables.y,
+                            variables.z, variables.x, grazingAngle,
+                            reflection, _Cutoff, shadow
                         );
+                       accumColor += grabColor;
                 }
                 // Loop over point/spot lights
                 for (int k = 0; k < 8; ++k)
                 {
                     // Extract LightData using array indices from the global buffer
                     float4 position = _PointSpotLightsBuffer[k][0];
-                    float4 rotation = _PointSpotLightsBuffer[k][1];
-                    float4 color = _PointSpotLightsBuffer[k][2];
+                    float4 color = _PointSpotLightsBuffer[k][1];
+                    float4 rotation = _PointSpotLightsBuffer[k][2];
+                    color.w = 1;
                     float4 variables = _PointSpotLightsBuffer[k][3];
+                    float3 specColor = color.rgb;
                     
                     // Add point/spot light contribution
-                    accumColor = accumColor + LightAccumulation(
+                    grabColor = LightAccumulation(
                             i.normal, normal, viewDir, albedo, MOAR,
-                            color.rgb * _Metalness, _Roughness, _Metalness,
-                            i.worldPos, position, color,
-                            variables.x, variables.y,
-                            2.0, 45.0, grazingAngle, reflection, _Cutoff, shadow
+                            specColor, _Roughness, _Metalness,
+                            i.worldPos, position, color.xyz,
+                            position.w, variables.y,
+                            variables.z, variables.x, grazingAngle,
+                            reflection, _Cutoff, shadow
                         );
+                    accumColor += grabColor;
                 }
                 // Assign the final color to the fragment
                 return accumColor;

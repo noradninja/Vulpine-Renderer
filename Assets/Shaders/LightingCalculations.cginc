@@ -1,90 +1,106 @@
-﻿//this contains all the lighting term functions, as well as helper functions for common shader ops
+﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+
+// LightingCalculations.cginc
+
+#include <HLSLSupport.cginc>
 
 /////////////////////DIFFUSE//////////////////////////////////////
 
 // Disney
-half3 DisneyDiffuse(half nl, half3 color)
+half3 DisneyDiffuse(float nl, float3 color)
 {
-    half3 baseColor = color.rgb;
+    float3 baseColor = color.rgb;
     // Lambert diffuse term
-    half diffuse = max(0.0, nl);
+    float diffuse = max(0.0, nl);
     // Energy-conserving adjustment
-    half3 adjustedDiffuse = diffuse * ((color.rgb / 3.14159));
+    float3 adjustedDiffuse = diffuse * ((color.rgb / 3.14159));
     // Apply base color
     return adjustedDiffuse * baseColor;
 }
-// Subsurface scattering with edge glow- this is still in progress and should not be used quite yet
-half3 SubsurfaceScatteringDiffuse(half3 normal, half3 viewDir, half3 lightDir, half3 position, half3 lightPosition, half3 lightColor, half3 albedo, half roughness)
+
+// Subsurface scattering with edge glow
+half3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float3 lightColor, float3 albedo, float roughness)
 {
-    half nl = max(0.0, dot(normal, lightDir));
-    half nv = max(0.0, dot(normal, viewDir));
+    float nl = max(0.0, dot(normal, lightDir));
+    float nv = max(0.0, dot(normal, viewDir));
     // Subsurface scattering parameters
-    half3 absorptionColor = albedo; // Adjust as needed
-    half3 scatteringColor = lightColor; // Adjust as needed
-    half scatteringCoeff = 0.1; // Adjust as needed
+    float3 absorptionColor = lightColor; // Adjust as needed
+    float3 scatteringColor = albedo; // Adjust as needed
+    float scatteringCoeff = 10; // Adjust as needed
     // Calculate the distance the light travels through the material
-    half3 h = normalize(viewDir + lightDir);
-    half vh = pow(saturate(dot(nv, h)), 0.5);
-    half3 sss = lerp(scatteringColor  * scatteringCoeff, absorptionColor, vh);
+    float3 h = normalize(viewDir - lightDir);
+    half vh = pow(saturate(dot(nv, h)), scatteringCoeff * roughness);
+ 
+    float3 sss = lerp(scatteringColor, scatteringColor * absorptionColor, vh);
+    
     return sss;
 }
+
+
+
 /////////////////////SPECULAR//////////////////////////////////////
 
 // GGX
-half3 GGXSpecular(half3 normal, half3 viewDir, half3 lightDir, half3 position, half3 lightPosition, half3 lightColor, half roughness, half3 grazingAngle)
+half3 GGXSpecular(float3 normal, float3 viewDir, float3 lightDir, float3 position, float3 lightPosition, float3 lightColor, float roughness, float3 grazingAngle)
 {
     // Get dot products needed
-    half3 h = normalize(viewDir + lightDir);
-    half nh = max(0.0, dot(normal, h));
-    half nv = max(0.0, dot(normal, viewDir));
-    half nl = max(0.0, dot(normal, lightDir));
-    half roughnessSq = roughness * roughness;
+    float3 h = normalize(viewDir + lightDir);
+    float nh = max(0.0, dot(normal, h));
+    float nv = max(0.0, dot(normal, viewDir));
+    float nl = max(0.0, dot(normal, lightDir));
+    float roughnessSq = roughness * roughness;
     // Absolute value of reflection intensity 
-    half a = nh * nh * (roughnessSq - 1.0) + 1.0;
+    float a = nh * nh * (roughnessSq - 1.0) + 1.0;
     // Combine the terms before division
-    half invDenominator = 1.0 / (3.14 * a * a);
+    float invDenominator = 1.0 / (3.14 * a * a);
     // Normal distribution
-    half D = roughnessSq * invDenominator;
+    float D = roughnessSq * invDenominator;
    // Shadow sidedness
-    half G1 = (2.0 * nh) * invDenominator;
+    float G1 = (1.0 * nh) * invDenominator;
     // Shadow distribution
-    half G = min(1.0, min(G1, 2.0 * nl / nh));
+    float G = min(1.0, min(G1, 2.0 * nl / nh)) + lightColor;
     // Fresnel-Schlick approximation
-    half3 F = grazingAngle;
+    float3 F = grazingAngle;
     // Avoid division by zero by adding a small value
-    half denominator = 4.0 * nv * nl + 0.001;
+    float denominator = 4.0 * nv * nl + 0.001;
     // Multiply instead of dividing
-    return (D * G * F) * rsqrt(denominator) * lightColor;
+    return (D * G * F) * rsqrt(denominator);
 }
+
 // Anisotropic
-half3 AnisotropicSpecular(half3 viewDir, half3 position, half3 normal, half3 lightPosition, half roughness, half3 grazingAngle)
+half3 AnisotropicSpecular(float3 viewDir, float3 position, float3 normal, float3 lightPosition, float roughness, float3 grazingAngle)
 {
     // Compute light direction
-    half3 lightDir = normalize(lightPosition - position);
+    float3 lightDir = normalize(lightPosition - position);
     // Compute half vector
-    half3 halfVec = normalize(viewDir - lightDir);
+    float3 halfVec = normalize(viewDir - lightDir);
     // Add a small offset to roughness to prevent division by zero
     roughness = roughness + 0.001;
     // Beckmann distribution term
-    half dotNH = dot(normal, halfVec);
-    half exponent = (dotNH * dotNH) / (roughness) + ((1.0 - dotNH * dotNH) / (roughness));
-    half D = exp(-exponent * 1-roughness) / (1  * roughness * pow(dotNH, 2));
+    float dotNH = dot(normal, halfVec);
+    float exponent = (dotNH * dotNH) / (roughness) + ((1.0 - dotNH * dotNH) / (roughness));
+    float D = exp(-exponent * 1-roughness) / (1  * roughness * pow(dotNH, 2));
     // Fresnel-Schlick approximation
-    half3 F = grazingAngle;
+    float3 F = grazingAngle;
     // Anisotropic reflection model
     return D * F;
 }
+
 // Retroreflective
-half3 RetroreflectiveSpecular(half3 viewDir, half3 normal, half roughness, half grazingAngle)
+half3 RetroreflectiveSpecular(float3 viewDir, float3 normal, float roughness, float grazingAngle)
 {
     // Calculate the reflection direction
-    half3 reflectionDir = reflect(-viewDir, normal);
+    float3 reflectionDir = reflect(-viewDir, normal);
+
     // Calculate the angle between the reflection direction and the view direction
-    half angle = grazingAngle;
+    float angle = grazingAngle;
+
     // Retroreflective specular model (simple cosine lobe)
     half3 retroReflection = max(0.1, dot(viewDir, reflectionDir));
+
     // Simulate refraction scattering by adding the color of the reflectionDir based on the grazing angle
     half3 refractionScattering = lerp(retroReflection, normalize(normal) + retroReflection, angle);
+
     // Combine retroreflection and refraction scattering
     return retroReflection + (refractionScattering * angle * roughness);
 }
@@ -92,43 +108,22 @@ half3 RetroreflectiveSpecular(half3 viewDir, half3 normal, half roughness, half 
 /////////////////////UTILITIES//////////////////////////////////////
 
 // Unpack a normalmap and apply a scale factor
-half3 ExtractNormal (half4 packedNormal, half normalHeight) {
+half3 ExtractNormal (half4 packednormal, half bumpScale) {
     half3 normal;
-    normal.xy = (packedNormal.wy * 2 - 1);
-    normal.xy *= normalHeight;
+    normal.xy = (packednormal.wy * 2 - 1);
+    normal.xy *= bumpScale;
     normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
     return normal;
 }
-// Calculate binormal
-half3 ComputeBinormal (half3 normal, half4 tangent)
-{
-    half3 binormal = cross(normal, tangent.xyz) * (tangent.w * unity_WorldTransformParams.w);
-    return binormal;
-}
-//Calculate normal in tangent space
-half3 ComputeNormal (half3 normalMap, half3 binormal, half3 normal, half3 tangent)
-{
-    normal = normalize(
-        normalMap.x * tangent +
-        normalMap.y * binormal +
-        normalMap.z * normal);
-    return normal;
-}
 // Unpack two normals from a single image- .rg = normalA.xy, .ba = normalB.xy, both .z are analytically derived
-//to utilize this you need to run it twice, once with your .rg and once with your .ba components from your packed image
-half3 ExtractpackedNormals (half2 packedNormal, half normalHeight) {
+half3 ExtractPackedNormals (half4 packednormal, half bumpScale) {
     half3 normal;
-    normal.xy = (packedNormal * 2 - 1);
-    normal.xy *= normalHeight;
+    normal.xy = (packednormal.wy * 2 - 1);//this will change, need to look at dxtnm format
+    normal.xy *= bumpScale;
     normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
     return normal;
 }
 //combine two normal maps together using whiteout blending for contrast
-half3 BlendTwoNormals (half3 normalA, half3 normalB) {
-    return normalize(half3(normalA.xy + normalB.xy, normalA.z * normalB.z));
-}
-// Decode RGBM encoded HDR values from a cubemap
-half3 DecodeHDR(in half4 rgbm)
-{
-    return rgbm.rgb * rgbm.a * 16.0;
+half3 BlendTwoNormals (half3 n1, half3 n2) {
+    return normalize(half3(n1.xy + n2.xy, n1.z * n2.z));
 }

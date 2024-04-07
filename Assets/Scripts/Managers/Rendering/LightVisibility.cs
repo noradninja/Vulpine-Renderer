@@ -4,6 +4,7 @@ using UnityEngine;
 public class LightVisibility : MonoBehaviour
 {
     public float lightID;
+    public int lightType;
     public Light _thisLight;
     public LightManager _lightManager;
     public EventBroadcaster _broadcaster;
@@ -78,8 +79,8 @@ public class LightVisibility : MonoBehaviour
                 isVisible = true;
                 _lightManager.OnVisible(_thisLight);
             }
-            //update the info for the light if it is already in the buffer (and therefore visible)
-            if (isInBuffer) 
+            //update the info for the light if it is already in the buffer (and therefore visible) and is not static
+            if (isInBuffer && !_thisLight.gameObject.isStatic) 
                 _lightManager.UpdateLightInBuffer(_thisLight, lightID);
         }
         //we are NOT in the view frustum

@@ -73,7 +73,9 @@
     <None Include="Assets\Shaders\Lit.shader" />
     <None Include="Assets\Shaders\GlassStainedBumpDistort_Orthographic.shader" />
     <None Include="Assets\Shaders\SSS_Fast.shader" />
+    <None Include="Assets\Shaders\Vulpine.shader" />
     <None Include="Assets\Shaders\EAAA.shader" />
+    <None Include="Assets\Shaders\Internal_Vulpine_PrepassLight.shader" />
     <None Include="Assets\ReadMe.txt" />
     <None Include="Assets\Shaders\2xSAI.shader" />
     <None Include="Assets\Shaders\FXAA.shader" />

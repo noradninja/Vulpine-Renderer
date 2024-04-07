@@ -27,7 +27,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
-        m_Texture: {fileID: 2800000, guid: aa08e245c787cd242880eaf43ea28651, type: 3}
+        m_Texture: {fileID: 2800000, guid: 94b3beb6d203c4e4dbba80d79da4604c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Cube:
@@ -47,6 +47,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Emissive:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -86,6 +90,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _Specular:
+        m_Texture: {fileID: 2800000, guid: 6bd04ceec4248e240a6c7a4cb85ac91c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
     - _BumpScale: 1
     - _Cutoff: 0
@@ -94,6 +102,7 @@ Material:
     - _DiffuseInVertex: 0
     - _DitheredLOD: 0
     - _DstBlend: 0
+    - _EmissiveBright: 0
     - _Fog: 0
     - _FresnelPowerBase: 10
     - _GlossMapScale: 1
@@ -107,13 +116,14 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _Roughness: 1
-    - _Shininess: 0.01
+    - _Shininess: 1
     - _SmoothnessTextureChannel: 0
     - _Specular: 1
     - _SpecularCalculation: 0
     - _SpecularHighlights: 1
     - _SpecularInVertex: 0
     - _SpecularTerm: 1
+    - _Specularity: 2
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
