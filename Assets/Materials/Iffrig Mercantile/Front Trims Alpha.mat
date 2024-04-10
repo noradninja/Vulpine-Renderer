@@ -110,7 +110,7 @@ Material:
     - _Occlusion: 0.782
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Roughness: 1
+    - _Roughness: 0.5
     - _Shininess: 0.01
     - _SmoothnessTextureChannel: 0
     - _Specular: 1

@@ -97,8 +97,8 @@ float4 LightAccumulation(float3 vertNormal, float3 normal, float3 viewDir, float
     half3 skyColor = DecodeHDR (skyData, unity_SpecCube0_HDR) * 0.05;            
 
     // Lighting model
-    float adjustedShadow = shadow * 2.5;
-    half3 combinedLight = (diff * spec * 0.5) * ((lightColor  * intensity) * adjustedShadow);
+    float adjustedShadow = shadow * 4;
+    half3 combinedLight = (diff * spec) * ((lightColor  * intensity) + adjustedShadow);
     // Final BRDF   
     float3 combinedColor = ((combinedLight * occlusion) + (skyColor * FR * metalness) + (albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb)* 0.22));
     clip( alpha - cutOff );
