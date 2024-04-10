@@ -67,11 +67,13 @@
     <Compile Include="Assets\Scripts\Managers\Rendering\ShaderController.cs" />
     <Compile Include="Assets\Scripts\RotateObject.cs" />
     <Compile Include="Assets\Scripts\SAI2x.cs" />
+    <Compile Include="Assets\Scripts\ShadowCaster.cs" />
     <None Include="Assets\LightingFastest.cginc" />
     <None Include="Assets\Shaders\LightingCalculations.cginc" />
     <None Include="Assets\Shaders\LightingFastest.cginc" />
     <None Include="Assets\Shaders\Lit.shader" />
     <None Include="Assets\Shaders\GlassStainedBumpDistort_Orthographic.shader" />
+    <None Include="Assets\Shaders\ShadowCalculations.cginc" />
     <None Include="Assets\Shaders\SSS_Fast.shader" />
     <None Include="Assets\Shaders\Vulpine.shader" />
     <None Include="Assets\Shaders\EAAA.shader" />

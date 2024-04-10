@@ -1,9 +1,14 @@
-﻿Shader "Vulpine Renderer/Lit"
+﻿// Upgrade NOTE: commented out 'float4x4 _CameraToWorld', a built-in variable
+// Upgrade NOTE: replaced '_LightMatrix0' with 'unity_WorldToLight'
+// Upgrade NOTE: replaced 'unity_World2Shadow' with 'unity_WorldToShadow'
+
+Shader "Vulpine Renderer/Lit"
 {
     Properties
     {
         _MainTex ("Albedo (RGB)", 2D) = "black" { }
         _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
+        _cookieTexture ("LightCookie (RGBA)", 2D) = "black" { }
         _Cutoff ("Alpha cutoff", Range(0,1)) = 0
         _NormalMap ("Normal Map", 2D) = "bump" { }
         _NormalHeight ("Height", Range(-2,2)) = 1
@@ -12,17 +17,24 @@
     }
     SubShader
     {
-	    Tags { "RenderType"="Opaque"}
-        ZWrite On
+Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" "Lightmode"="ForwardBase"} //I know this is weird but it's a workaround for the Vita
+		LOD 80
+		ZWrite On
+		Cull Off
 		Blend One OneMinusSrcAlpha //because we are going to clip at the end
-        LOD 100
+       
         Pass
         {
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
-            //#pragma pack_matrix(row_major)
+            #pragma multi_compile _ SHADOWS_SCREEN
+            // #pragma multi_compile _ SHADOWS_DEPTH
+            #pragma multi_compile_fog
+			// Compile specialized variants for when positional (point/spot) and spot lights are present
+			#pragma multi_compile __ POINT SPOT
+			#pragma multi_compile __ AMBIENT_ON
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "AutoLight.cginc"
@@ -34,7 +46,7 @@
             // Shader Properties
             float _Roughness, _Metalness, _Cutoff;
             half _NormalHeight;
-            sampler2D _MainTex, _NormalMap, _MOARMap;
+            sampler2D _MainTex, _NormalMap, _MOARMap, _cookieTexture;
             
             // Coordinate variables for textures
             float4 _NormalMap_ST;
@@ -58,6 +70,10 @@
                 float3 normal : TEXCOORD1;
                 float4 tangent : TEXCOORD2;
                 float2 uv: TEXCOORD3;
+                SHADOW_COORDS(4)
+                #if defined(SHADOWS_SCREEN)
+		            float4 shadowCoordinates : TEXCOORD5;
+	            #endif
             };
             
             // Global Directional Lights Buffer
@@ -76,11 +92,14 @@
                 o.color = v.color;
                 o.uv = v.uv;
             	TRANSFER_VERTEX_TO_FRAGMENT(o);
+                TRANSFER_SHADOW(o);
                 return o;
             }
+            
             // Fragment Shader
             half4 frag(v2f i) : COLOR
             {
+                UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
                 // Initialize accumulated color
                 float4 accumColor = float4(0,0,0,1);
                 float4 grabColor = float4(0,0,0,1);
@@ -109,7 +128,7 @@
                 half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(i.normal));
                 // Add a tiny value to albedo to eliminate absolute blacks
                 albedo.rgb += 0.1f;
-                float shadow = 1;
+                float shadow = attenuation;
                 // Loop over directional lights
                 for (int j = 0; j < 4; ++j)
                 {
@@ -128,7 +147,7 @@
                             i.worldPos, position, color.xyz,
                             position.w, variables.y,
                             variables.z, variables.x, grazingAngle,
-                            reflection, _Cutoff, shadow
+                            reflection, _Cutoff, shadow, _cookieTexture
                         );
                        accumColor += grabColor;
                 }
@@ -150,13 +169,69 @@
                             i.worldPos, position, color.xyz,
                             position.w, variables.y,
                             variables.z, variables.x, grazingAngle,
-                            reflection, _Cutoff, shadow
+                            reflection, _Cutoff, shadow, _cookieTexture
                         );
                     accumColor += grabColor;
                 }
                 // Assign the final color to the fragment
                 return accumColor;
             }
+            ENDCG
+        }
+		Pass{
+            Tags {"LightMode"="ShadowCaster"}
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+			#pragma target 3.0
+               #pragma multi_compile_fog
+			// Compile specialized variants for when positional (point/spot) and spot lights are present
+			#pragma multi_compile __ POINT SPOT
+			#pragma multi_compile __ AMBIENT_ON
+			#pragma multi_compile_fog
+			#pragma multi_compile _ LOD_FADE_CROSSFADE
+            #include "UnityCG.cginc"
+			#include "UnityPBSLighting.cginc" // TBD: remove
+			
+			struct v2f {
+				//V2F_SHADOW_CASTER;
+				float4 vertex : POSITION;
+				float3 normal : NORMAL;
+				float2 uv : TEXCOORD0;
+				UNITY_VERTEX_OUTPUT_STEREO
+//				half3 normal : NORMAL;
+			};
+			struct appdata {
+				float4 vertex : POSITION;
+				float3 normal : NORMAL;
+				float2 uv : TEXCOORD0;
+			};
+			uniform half4 _MainTex_ST;
+	
+			v2f vert( appdata v )
+			{
+				v2f o;
+				UNITY_SETUP_INSTANCE_ID(v);
+				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+				o.vertex = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
+					return o;
+			}
+            
+            sampler2D _MOARMap;
+			float _Cutoff;
+
+            float GetAlpha (v2f i) {
+				float alpha = tex2D(_MOARMap, i.uv.xy).b;
+				return alpha;
+			}
+			half4 frag( v2f i ) : COLOR
+			{
+				float alpha = GetAlpha(i);
+				clip(alpha - _Cutoff);
+				SHADOW_CASTER_FRAGMENT(i);
+			}
             ENDCG
         }
     }

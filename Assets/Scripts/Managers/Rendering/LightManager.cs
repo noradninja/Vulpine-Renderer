@@ -15,6 +15,7 @@ public class LightManager : MonoBehaviour
     //constants for setting array sizes
     private const int MaxPointSpotLights = 8;
     private const int MaxDirectionalLights = 4;
+    public Texture spotLightTexture;
     //separate arrays for directional and point/spot lights structs
     public LightData[] directionalLightsArray = new LightData[MaxDirectionalLights];
     public LightData[] pointSpotLightsArray = new LightData[MaxPointSpotLights];
@@ -45,22 +46,18 @@ public class LightManager : MonoBehaviour
         //set based on light type
         if (visibleLight.GetComponent<LightVisibility>().lightType == 0) //directional
         {
-            AddDirectionalLightToArray(data, visibleLight);
-            data.variables.z = 0;
+            data.variables.z = 0.0f;
         }
         else if (visibleLight.GetComponent<LightVisibility>().lightType == 1) //point
         {
-            AddPointSpotLightToArray(data, visibleLight);
-            data.variables.z = 1;
+            data.variables.z = 1.0f;
         }
         else if (visibleLight.GetComponent<LightVisibility>().lightType == 2) //spot
         {
-            AddPointSpotLightToArray(data, visibleLight);
-            data.variables.z = 2;
+            data.variables.z = 2.0f;
         }
-
         data.variables.w = visibleLight.GetComponent<LightVisibility>().lightID;
-        
+        AddPointSpotLightToArray(data, visibleLight);
         //set flags and send new data to array
         visibleLight.GetComponent<LightVisibility>().isInBuffer = true;
         visibleLight.GetComponent<LightVisibility>().wasPreviouslyVisible = false;
@@ -165,8 +162,8 @@ public class LightManager : MonoBehaviour
                 directionalLightsArray[i].color = lightToUpdate.color;
                 directionalLightsArray[i].variables.x = lightToUpdate.spotAngle;
                 directionalLightsArray[i].variables.y = lightToUpdate.intensity;
-                directionalLightsArray[i].variables.z = directionalLightsArray[i].variables.z;
-                directionalLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
+                //directionalLightsArray[i].variables.z = directionalLightsArray[i].variables.z;
+                //directionalLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
             }
         }
         else //point/spot
@@ -183,8 +180,8 @@ public class LightManager : MonoBehaviour
                 pointSpotLightsArray[i].color = lightToUpdate.color;
                 pointSpotLightsArray[i].variables.x = lightToUpdate.spotAngle;
                 pointSpotLightsArray[i].variables.y = lightToUpdate.intensity;
-                pointSpotLightsArray[i].variables.z = pointSpotLightsArray[i].variables.z;
-                pointSpotLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
+                //pointSpotLightsArray[i].variables.z = pointSpotLightsArray[i].variables.z;
+                //pointSpotLightsArray[i].variables.w = lightToUpdate.GetComponent<LightVisibility>().lightID;
             }  
         }
         //now we can update the buffer contents

@@ -7,7 +7,7 @@
 /////////////////////DIFFUSE//////////////////////////////////////
 
 // Disney
-half3 DisneyDiffuse(float nl, float3 color)
+half3 DisneyDiffuse(float nl, float3 color, float3 lightColor)
 {
     float3 baseColor = color.rgb;
     // Lambert diffuse term
@@ -15,7 +15,7 @@ half3 DisneyDiffuse(float nl, float3 color)
     // Energy-conserving adjustment
     float3 adjustedDiffuse = diffuse * ((color.rgb / 3.14159));
     // Apply base color
-    return adjustedDiffuse * baseColor;
+    return adjustedDiffuse * baseColor * lightColor;
 }
 
 // Subsurface scattering with edge glow
@@ -26,12 +26,12 @@ half3 SubsurfaceScatteringDiffuse(float3 normal, float3 viewDir, float3 lightDir
     // Subsurface scattering parameters
     float3 absorptionColor = lightColor; // Adjust as needed
     float3 scatteringColor = albedo; // Adjust as needed
-    float scatteringCoeff = 10; // Adjust as needed
+    float scatteringCoeff = 50000 / nl; // Adjust as needed
     // Calculate the distance the light travels through the material
-    float3 h = normalize(viewDir - lightDir);
-    half vh = pow(saturate(dot(nv, h)), scatteringCoeff * roughness);
+    float3 h = normalize(viewDir + lightDir);
+    half vh = pow(saturate(dot(nv, h)), scatteringCoeff);
  
-    float3 sss = lerp(scatteringColor, scatteringColor * absorptionColor, vh);
+    float3 sss = lerp(scatteringColor, scatteringColor + absorptionColor, vh);
     
     return sss;
 }
@@ -126,4 +126,20 @@ half3 ExtractPackedNormals (half4 packednormal, half bumpScale) {
 //combine two normal maps together using whiteout blending for contrast
 half3 BlendTwoNormals (half3 n1, half3 n2) {
     return normalize(half3(n1.xy + n2.xy, n1.z * n2.z));
+}
+//spotlight falloff
+float CalculateSpotlightFalloff(float3 lightDir, float3 spotAxis, float spotAngle)
+{
+    // Calculate the cosine of the angle between the light direction and the spotlight axis
+    float cosAngle = dot(normalize(lightDir), normalize(spotAxis));
+
+    // Use smoothstep to create a smooth falloff from the center to the edges of the spotlight cone
+    float falloff = smoothstep(cos(spotAngle * 0.125), 1.0, cosAngle);
+
+    return falloff;
+}
+// Decode RGBM encoded HDR values from a cubemap
+float3 DecodeHDR(in float4 rgbm)
+{
+    return rgbm.rgb * rgbm.a * 16.0;
 }
