@@ -8,6 +8,8 @@ Shader "Vulpine Renderer/Lit"
     {
         _MainTex ("Albedo (RGB)", 2D) = "black" { }
         _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
+	    _ParallaxMap ("Parallax", 2D) = "white" {}
+		_ParallaxStrength ("Parallax Strength", Range(0, 10)) = 0
         _cookieTexture ("LightCookie (RGBA)", 2D) = "black" { }
         _Cutoff ("Alpha cutoff", Range(0,1)) = 0
         _NormalMap ("Normal Map", 2D) = "bump" { }
@@ -35,6 +37,7 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
 			// Compile specialized variants for when positional (point/spot) and spot lights are present
 			#pragma multi_compile __ POINT SPOT
 			#pragma multi_compile __ AMBIENT_ON
+            #pragma shader_feature _PARALLAX_MAP
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "AutoLight.cginc"
@@ -44,9 +47,11 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
             float _NumDirectionalLights;
             float _NumPointSpotLights;
             // Shader Properties
-            float _Roughness, _Metalness, _Cutoff;
+            float _Roughness, _Metalness, _Cutoff, _ParallaxStrength;;
             half _NormalHeight;
-            sampler2D _MainTex, _NormalMap, _MOARMap, _cookieTexture;
+            sampler2D _MainTex, _NormalMap, _MOARMap, _cookieTexture, _ParallaxMap;
+
+
             
             // Coordinate variables for textures
             float4 _NormalMap_ST;
@@ -60,6 +65,9 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                 float4 tangent : TANGENT;
                 float4 color : COLOR;
                 float2 uv: TEXCOORD0;
+            	#if defined(_PARALLAX_MAP)
+					float3 tangentViewDir : TEXCOORD1;
+				#endif
             };
             // Struct for Vertex Output
             struct v2f
@@ -74,6 +82,8 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                 #if defined(SHADOWS_SCREEN)
 		            float4 shadowCoordinates : TEXCOORD5;
 	            #endif
+					float3 tangentViewDir : TEXCOORD6;
+			
             };
             
             // Global Directional Lights Buffer
@@ -91,6 +101,14 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
                 o.uv = v.uv;
+            	
+					float3x3 objectToTangent = float3x3(
+						v.tangent.xyz,
+						cross(v.normal, v.tangent.xyz) * v.tangent.w,
+						v.normal
+					);
+					o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
+		
             	TRANSFER_VERTEX_TO_FRAGMENT(o);
                 TRANSFER_SHADOW(o);
                 return o;
@@ -105,7 +123,12 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                 float4 grabColor = float4(0,0,0,1);
                 // Prevents multing by zero on nonmetals
                 _Metalness += 0.001;
-               
+            	//apply parallax offsets
+				
+					i.tangentViewDir = normalize(i.tangentViewDir);
+            		i.tangentViewDir.xy /= (i.tangentViewDir.z + 0.42);
+            		float height = tex2D(_ParallaxMap, i.uv.xy).r;
+					i.uv.xy += i.tangentViewDir.xy * (_ParallaxStrength * height);
                 // Sample the albedo, MOAR, and normal maps with built-in tiling and offset values
                 float4 MOAR = tex2D(_MOARMap, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
                 float4 albedo = tex2D(_MainTex, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
@@ -199,15 +222,20 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
 				float4 vertex : POSITION;
 				float3 normal : NORMAL;
 				float2 uv : TEXCOORD0;
-				UNITY_VERTEX_OUTPUT_STEREO
-//				half3 normal : NORMAL;
-			};
+            	float4 tangent : TANGENT;
+				float3 tangentViewDir : TEXCOORD1;
+            	UNITY_VERTEX_OUTPUT_STEREO
+            };
 			struct appdata {
 				float4 vertex : POSITION;
 				float3 normal : NORMAL;
 				float2 uv : TEXCOORD0;
+				float4 tangent : TEXCOORD2;
+				float3 tangentViewDir : TEXCOORD1;
 			};
 			uniform half4 _MainTex_ST;
+            float _ParallaxStrength;
+            sampler2D _ParallaxMap;
 	
 			v2f vert( appdata v )
 			{
@@ -216,7 +244,15 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				o.vertex = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
-					return o;
+				o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
+				float3x3 objectToTangent = float3x3(
+						v.tangent.xyz,
+						cross(v.normal, v.tangent.xyz) * v.tangent.w,
+						v.normal
+					);
+				o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
+				o.normal = 0;
+				return o;
 			}
             
             sampler2D _MOARMap;
@@ -228,9 +264,12 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
 			}
 			half4 frag( v2f i ) : COLOR
 			{
-				float alpha = GetAlpha(i);
-				clip(alpha - _Cutoff);
-				SHADOW_CASTER_FRAGMENT(i);
+				//apply parallax offsets
+				i.tangentViewDir = normalize(i.tangentViewDir);
+            	i.tangentViewDir.xy /= (i.tangentViewDir.z + 0.42);
+            	float height = tex2D(_ParallaxMap, i.uv.xy).r;
+				i.uv += i.tangentViewDir.xy * (_ParallaxStrength * height);
+				SHADOW_CASTER_FRAGMENT(i.uv);
 			}
             ENDCG
         }

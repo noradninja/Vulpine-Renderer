@@ -11,7 +11,7 @@ float4 LightAccumulation(float3 vertNormal, float3 normal, float3 viewDir, float
                          float lightType, float spotAngle, float3 grazingAngle, float3 reflection, float cutOff, float shadow, sampler2D cookieTexture)
 {
     half fallOff = 1.0;
-    intensity *= 0.88; // compensate for inspector intensity range, should replace this with an approximation for lux and temp
+    intensity *= 0.02; // compensate for inspector intensity range, should replace this with an approximation for lux and temp
     // Calculate light direction and distance
     float3 lightDir = lightPosition.xyz - worldPosition;
     float distance = length(lightDir);
@@ -97,7 +97,7 @@ float4 LightAccumulation(float3 vertNormal, float3 normal, float3 viewDir, float
     half3 skyColor = DecodeHDR (skyData, unity_SpecCube0_HDR) * 0.05;            
 
     // Lighting model
-    float adjustedShadow = shadow * 4;
+    float adjustedShadow = shadow * half4(255-lightColor.r, 255-lightColor.g, 255-lightColor.b, 1) * 0.0128;
     half3 combinedLight = (diff * spec) * ((lightColor  * intensity) + adjustedShadow);
     // Final BRDF   
     float3 combinedColor = ((combinedLight * occlusion) + (skyColor * FR * metalness) + (albedo * (UNITY_LIGHTMODEL_AMBIENT.rgb)* 0.22));
