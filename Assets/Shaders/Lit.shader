@@ -6,6 +6,7 @@ Shader "Vulpine Renderer/Lit"
 {
     Properties
     {
+    	[Enum(Opaque,2,Cutout,0)] _BlendingMode ("Blending Mode", Float) = 0.0
         _MainTex ("Albedo (RGB)", 2D) = "black" { }
         _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
 	    _ParallaxMap ("Parallax", 2D) = "white" {}
@@ -16,39 +17,41 @@ Shader "Vulpine Renderer/Lit"
         _NormalHeight ("Height", Range(-2,2)) = 1
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Metalness ("Metalness", Range(0, 1)) = 0.5
+    	[ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
+        [ToggleOff] _GlossyReflections("Glossy Reflections", Float) = 1.0
+    	[ToggleOff] _SoftBody("Soft Body", float) = 0.0
     }
     SubShader
     {
 Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" "Lightmode"="ForwardBase"} //I know this is weird but it's a workaround for the Vita
 		LOD 80
 		ZWrite On
-		Cull Off
+		Cull [_BlendingMode]
 		Blend One OneMinusSrcAlpha //because we are going to clip at the end
        
         Pass
         {
             CGPROGRAM
+            //Pragmas
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
             #pragma multi_compile _ SHADOWS_SCREEN
-            // #pragma multi_compile _ SHADOWS_DEPTH
+            #pragma multi_compile _ SHADOWS_DEPTH
             #pragma multi_compile_fog
-			// Compile specialized variants for when positional (point/spot) and spot lights are present
 			#pragma multi_compile __ POINT SPOT
 			#pragma multi_compile __ AMBIENT_ON
             #pragma shader_feature _PARALLAX_MAP
+			//Includes
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "AutoLight.cginc"
             #include "LightingFastest.cginc"
 
             // Global Properties
-            float _NumDirectionalLights;
-            float _NumPointSpotLights;
+            float _NumDirectionalLights, _NumPointSpotLights;
             // Shader Properties
-            float _Roughness, _Metalness, _Cutoff, _ParallaxStrength;;
-            half _NormalHeight;
+            float _Roughness, _Metalness, _Cutoff, _ParallaxStrength, _NormalHeight, _SpecularHighlights, _GlossyReflections, _SoftBody;
             sampler2D _MainTex, _NormalMap, _MOARMap, _cookieTexture, _ParallaxMap;
 
 
@@ -98,7 +101,12 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                 o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 o.normal = mul(v.normal, unity_WorldToObject);
                 o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
-                o.vertex = UnityObjectToClipPos(v.vertex);
+            	if (_SoftBody)
+            	{
+            		float3 wind = float3(0.33,0.11515,0.66); //This will be replaced with a float4 passed from the CPU from the local wind zone
+            		o.vertex = UnityObjectToClipPos(WindVertexDeformation(v.vertex, normalize(o.worldPos), 5.0,0.01,0.005, wind, 0.75, _Time));
+            	}
+            	else o.vertex = UnityObjectToClipPos(v.vertex);
                 o.color = v.color;
                 o.uv = v.uv;
             	
@@ -108,7 +116,7 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
 						v.normal
 					);
 					o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
-		
+            	
             	TRANSFER_VERTEX_TO_FRAGMENT(o);
                 TRANSFER_SHADOW(o);
                 return o;
@@ -120,7 +128,7 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                 UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
                 // Initialize accumulated color
                 float4 accumColor = float4(0,0,0,1);
-                float4 grabColor = float4(0,0,0,1);
+                float4 grabColor;
                 // Prevents multing by zero on nonmetals
                 _Metalness += 0.001;
             	//apply parallax offsets
@@ -170,7 +178,7 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                             i.worldPos, position, color.xyz,
                             position.w, variables.y,
                             variables.z, variables.x, grazingAngle,
-                            reflection, _Cutoff, shadow, _cookieTexture
+                            reflection, _Cutoff, shadow, _cookieTexture, _SpecularHighlights, _GlossyReflections
                         );
                        accumColor += grabColor;
                 }
@@ -192,7 +200,7 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
                             i.worldPos, position, color.xyz,
                             position.w, variables.y,
                             variables.z, variables.x, grazingAngle,
-                            reflection, _Cutoff, shadow, _cookieTexture
+                            reflection, _Cutoff, shadow, _cookieTexture, _SpecularHighlights, _GlossyReflections
                         );
                     accumColor += grabColor;
                 }
@@ -201,78 +209,78 @@ Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCut
             }
             ENDCG
         }
-		Pass{
-            Tags {"LightMode"="ShadowCaster"}
-
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-			#pragma target 3.0
-               #pragma multi_compile_fog
-			// Compile specialized variants for when positional (point/spot) and spot lights are present
-			#pragma multi_compile __ POINT SPOT
-			#pragma multi_compile __ AMBIENT_ON
-			#pragma multi_compile_fog
-			#pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include "UnityCG.cginc"
-			#include "UnityPBSLighting.cginc" // TBD: remove
-			
-			struct v2f {
-				//V2F_SHADOW_CASTER;
-				float4 vertex : POSITION;
-				float3 normal : NORMAL;
-				float2 uv : TEXCOORD0;
-            	float4 tangent : TANGENT;
-				float3 tangentViewDir : TEXCOORD1;
-            	UNITY_VERTEX_OUTPUT_STEREO
-            };
-			struct appdata {
-				float4 vertex : POSITION;
-				float3 normal : NORMAL;
-				float2 uv : TEXCOORD0;
-				float4 tangent : TEXCOORD2;
-				float3 tangentViewDir : TEXCOORD1;
-			};
-			uniform half4 _MainTex_ST;
-            float _ParallaxStrength;
-            sampler2D _ParallaxMap;
-	
-			v2f vert( appdata v )
-			{
-				v2f o;
-				UNITY_SETUP_INSTANCE_ID(v);
-				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-				o.vertex = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
-				o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
-				float3x3 objectToTangent = float3x3(
-						v.tangent.xyz,
-						cross(v.normal, v.tangent.xyz) * v.tangent.w,
-						v.normal
-					);
-				o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
-				o.normal = 0;
-				return o;
-			}
-            
-            sampler2D _MOARMap;
-			float _Cutoff;
-
-            float GetAlpha (v2f i) {
-				float alpha = tex2D(_MOARMap, i.uv.xy).b;
-				return alpha;
-			}
-			half4 frag( v2f i ) : COLOR
-			{
-				//apply parallax offsets
-				i.tangentViewDir = normalize(i.tangentViewDir);
-            	i.tangentViewDir.xy /= (i.tangentViewDir.z + 0.42);
-            	float height = tex2D(_ParallaxMap, i.uv.xy).r;
-				i.uv += i.tangentViewDir.xy * (_ParallaxStrength * height);
-				SHADOW_CASTER_FRAGMENT(i.uv);
-			}
-            ENDCG
-        }
+//		Pass{
+//            Tags {"LightMode"="ShadowCaster"}
+//
+//            CGPROGRAM
+//            #pragma vertex vert
+//            #pragma fragment frag
+//			#pragma target 3.0
+//               #pragma multi_compile_fog
+//			// Compile specialized variants for when positional (point/spot) and spot lights are present
+//			#pragma multi_compile __ POINT SPOT
+//			#pragma multi_compile __ AMBIENT_ON
+//			#pragma multi_compile_fog
+//			#pragma multi_compile _ LOD_FADE_CROSSFADE
+//            #include "UnityCG.cginc"
+//			#include "UnityPBSLighting.cginc" // TBD: remove
+//			
+//			struct v2f {
+//				//V2F_SHADOW_CASTER;
+//				float4 vertex : POSITION;
+//				float3 normal : NORMAL;
+//				float2 uv : TEXCOORD0;
+//            	float4 tangent : TANGENT;
+//				float3 tangentViewDir : TEXCOORD1;
+//            	UNITY_VERTEX_OUTPUT_STEREO
+//            };
+//			struct appdata {
+//				float4 vertex : POSITION;
+//				float3 normal : NORMAL;
+//				float2 uv : TEXCOORD0;
+//				float4 tangent : TEXCOORD2;
+//				float3 tangentViewDir : TEXCOORD1;
+//			};
+//			uniform half4 _MainTex_ST;
+//            float _ParallaxStrength;
+//            sampler2D _ParallaxMap;
+//	
+//			v2f vert( appdata v )
+//			{
+//				v2f o;
+//				UNITY_SETUP_INSTANCE_ID(v);
+//				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+//				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+//				o.vertex = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
+//				o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
+//				float3x3 objectToTangent = float3x3(
+//						v.tangent.xyz,
+//						cross(v.normal, v.tangent.xyz) * v.tangent.w,
+//						v.normal
+//					);
+//				o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
+//				o.normal = 0;
+//				return o;
+//			}
+//            
+//            sampler2D _MOARMap;
+//			float _Cutoff;
+//
+//            float GetAlpha (v2f i) {
+//				float alpha = tex2D(_MOARMap, i.uv.xy).b;
+//				return alpha;
+//			}
+//			half4 frag( v2f i ) : COLOR
+//			{
+//				//apply parallax offsets
+//				i.tangentViewDir = normalize(i.tangentViewDir);
+//            	i.tangentViewDir.xy /= (i.tangentViewDir.z + 0.42);
+//            	float height = tex2D(_ParallaxMap, i.uv.xy).r;
+//				i.uv += i.tangentViewDir.xy * (_ParallaxStrength * height);
+//				SHADOW_CASTER_FRAGMENT(i.uv);
+//			}
+//            ENDCG
+//        }
     }
     FallBack "Diffuse"
 }

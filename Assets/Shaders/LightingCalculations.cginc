@@ -115,7 +115,7 @@ half3 ExtractNormal (half4 packednormal, half bumpScale) {
     normal.z = sqrt(1.0 - saturate(dot(normal.xy, normal.xy)));
     return normal;
 }
-// Unpack two normals from a single image- .rg = normalA.xy, .ba = normalB.xy, both .z are analytically derived
+// Unpack two normals from a single image- .rg = normalA.xy, .ba = normalB.xy, both .z are analytically derived //TODO//
 half3 ExtractPackedNormals (half4 packednormal, half bumpScale) {
     half3 normal;
     normal.xy = (packednormal.wy * 2 - 1);//this will change, need to look at dxtnm format
@@ -132,14 +132,21 @@ float CalculateSpotlightFalloff(float3 lightDir, float3 spotAxis, float spotAngl
 {
     // Calculate the cosine of the angle between the light direction and the spotlight axis
     float cosAngle = dot(normalize(lightDir), normalize(spotAxis));
-
     // Use smoothstep to create a smooth falloff from the center to the edges of the spotlight cone
-    float falloff = smoothstep(cos(spotAngle * 0.125), 1.0, cosAngle);
-
+    float falloff = smoothstep(cos(spotAngle * 0.5), 1.0, cosAngle);
     return falloff;
 }
 // Decode RGBM encoded HDR values from a cubemap
 float3 DecodeHDR(in float4 rgbm)
 {
     return rgbm.rgb * rgbm.a * 16.0;
+}
+// Displace verts to simulate wind - we will eventually hook this up to wind zones and base those on the wind audio for ease of use by artists
+half4 WindVertexDeformation(float4 vertex, float3 worldPos, float _leaves_wiggle_speed, float _wind_size, float _leaves_wiggle_disp, float3 _wind_dir, float _influence, float4 _time)
+{
+    // vertex surface movement and wiggle
+    vertex.x += cos(_time.z * vertex.x * _leaves_wiggle_speed + (worldPos.x/_wind_size)) * _leaves_wiggle_disp * _wind_dir.x * _influence; //x
+    vertex.y += sin(_time.w * vertex.y * _leaves_wiggle_speed + (worldPos.y/_wind_size)) * _leaves_wiggle_disp * _wind_dir.y * _influence; //y
+    vertex.z += sin(cos(_time.y * vertex.z * _leaves_wiggle_speed + (worldPos.z/_wind_size)))* _leaves_wiggle_disp * _wind_dir.z * _influence; //z
+    return vertex;
 }

@@ -186,7 +186,7 @@ public class LightManager : MonoBehaviour
         }
         //now we can update the buffer contents
         UpdateBuffer();
-        Debug.Log(lightToUpdate + " triggered buffer update");
+      //  Debug.Log(lightToUpdate + " triggered buffer update");
     }
 
     private void UpdateBuffer()
