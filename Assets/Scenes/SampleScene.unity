@@ -3983,7 +3983,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 534669902}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9797f772cc8748b4096fd634497bb2e2, type: 3}
   m_Name: 
@@ -3997,7 +3997,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 534669902}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1d29bc3d2a90e3d41b33dd3e8cc09c13, type: 3}
   m_Name: 
@@ -4928,7 +4928,7 @@ Prefab:
     - target: {fileID: 2300000, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: 420110647f3ec914ebe1c62d0dd6afbb, type: 2}
+      objectReference: {fileID: 2100000, guid: fdc328296949e3b4f8547351bf45d0c3, type: 2}
     - target: {fileID: 2300008, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -8767,7 +8767,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8be350d84eef394bb2c0c982bc18c00, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotationSpeed: {x: 0, y: 5, z: 0}
+  rotationSpeed: {x: 0, y: 2, z: 0}
 --- !u!4 &1337348646
 Transform:
   m_ObjectHideFlags: 0
