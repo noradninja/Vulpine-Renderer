@@ -20,7 +20,7 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.0627451, g: 0.0627451, b: 0.09411765, a: 1}
+  m_AmbientSkyColor: {r: 0.156, g: 0.156, b: 0.234, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 8
@@ -3907,8 +3907,11 @@ GameObject:
   - component: {fileID: 534669905}
   - component: {fileID: 534669904}
   - component: {fileID: 534669903}
+  - component: {fileID: 534669909}
+  - component: {fileID: 534669910}
   - component: {fileID: 534669907}
   - component: {fileID: 534669906}
+  - component: {fileID: 534669908}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -4003,6 +4006,56 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: f420c30265409f240a7b1bf49978a713, type: 2}
+--- !u!114 &534669908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 675fbfdc1d6fc9a40a3f74af730850cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableInternalResolution: 0
+  InternalResolution: 3
+  screenResolution: 2
+  filterMode: 0
+--- !u!114 &534669909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e76f663512ba1ed4da712c70ffa5f120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetCamera: {fileID: 534669904}
+  renderLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  depthPrepassMask:
+    serializedVersion: 2
+    m_Bits: 2
+  depthOnlyMaterial: {fileID: 2100000, guid: 5a8587f7753ea484789efc66ce14bd33, type: 2}
+  postMaterial: {fileID: 0}
+  enableDepthPrepass: 0
+  enablePost: 0
+  lightManager: {fileID: 1317738735}
+--- !u!114 &534669910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bbd3019f7b0f2f4da9966b67c58c38f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FrameIndex: 0
 --- !u!1 &585718988
 GameObject:
   m_ObjectHideFlags: 0
@@ -4928,7 +4981,7 @@ Prefab:
     - target: {fileID: 2300000, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: fdc328296949e3b4f8547351bf45d0c3, type: 2}
+      objectReference: {fileID: 2100000, guid: 69554c8c7c800eb45b2be1dd6dd7320f, type: 2}
     - target: {fileID: 2300008, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -5075,6 +5128,22 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 100028, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 100034, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
+      propertyPath: m_Layer
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
+      propertyPath: m_Layer
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 100028, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
+      propertyPath: m_Layer
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 100036, guid: 475d49b5f2035ea4ca129a860837435a, type: 3}
+      propertyPath: m_Layer
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -8389,32 +8458,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ba2bcc01df5ac34a89e7af18d6f01de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spotLightTexture: {fileID: 2800000, guid: 21b9e78374bc48d44a8234a7ea5f2ce4, type: 3}
   directionalLightsArray:
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
   - position: {x: 0, y: 0, z: 0, w: 0}
     rotation: {x: 0, y: 0, z: 0, w: 0}
     color: {x: 0, y: 0, z: 0, w: 0}
@@ -8440,218 +8484,8 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0, w: 0}
     color: {x: 0, y: 0, z: 0, w: 0}
     variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
-  - position: {x: 0, y: 0, z: 0, w: 0}
-    rotation: {x: 0, y: 0, z: 0, w: 0}
-    color: {x: 0, y: 0, z: 0, w: 0}
-    variables: {x: 0, y: 0, z: 0, w: 0}
   numActiveDirectionalLights: 0
   numActivePointSpotLights: 0
-  directionalLightsBuffer:
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  pointSpotLightsBuffer:
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
-  - e00: 0
-    e01: 0
-    e02: 0
-    e03: 0
-    e10: 0
-    e11: 0
-    e12: 0
-    e13: 0
-    e20: 0
-    e21: 0
-    e22: 0
-    e23: 0
-    e30: 0
-    e31: 0
-    e32: 0
-    e33: 0
 --- !u!4 &1317738736
 Transform:
   m_ObjectHideFlags: 0
@@ -8762,12 +8596,12 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1337348644}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8be350d84eef394bb2c0c982bc18c00, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotationSpeed: {x: 0, y: 2, z: 0}
+  rotationSpeed: {x: 0, y: 5, z: 0}
 --- !u!4 &1337348646
 Transform:
   m_ObjectHideFlags: 0

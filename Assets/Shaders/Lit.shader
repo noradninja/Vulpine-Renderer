@@ -1,286 +1,264 @@
-﻿// Upgrade NOTE: commented out 'float4x4 _CameraToWorld', a built-in variable
+﻿// Upgrade NOTE: replaced 'unity_World2Shadow' with 'unity_WorldToShadow'
 // Upgrade NOTE: replaced '_LightMatrix0' with 'unity_WorldToLight'
-// Upgrade NOTE: replaced 'unity_World2Shadow' with 'unity_WorldToShadow'
 
 Shader "Vulpine Renderer/Lit"
 {
     Properties
     {
-    	[Enum(Opaque,2,Cutout,0)] _BlendingMode ("Blending Mode", Float) = 0.0
+        [Enum(Opaque,2,Cutout,0)] _BlendingMode ("Blending Mode", Float) = 0.0
         _MainTex ("Albedo (RGB)", 2D) = "black" { }
         _MOARMap ("MOAR (RGBA)", 2D) = "black" { }
-	    _ParallaxMap ("Parallax", 2D) = "white" {}
-		_ParallaxStrength ("Parallax Strength", Range(0, 10)) = 0
+        _ParallaxMap ("Parallax", 2D) = "white" {}
+        _ParallaxStrength ("Parallax Strength", Range(0, 10)) = 0
         _cookieTexture ("LightCookie (RGBA)", 2D) = "black" { }
         _Cutoff ("Alpha cutoff", Range(0,1)) = 0
         _NormalMap ("Normal Map", 2D) = "bump" { }
         _NormalHeight ("Height", Range(-2,2)) = 1
         _Roughness ("Roughness", Range(0,1)) = 0.5
         _Metalness ("Metalness", Range(0, 1)) = 0.5
-    	[ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
+        [ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
         [ToggleOff] _GlossyReflections("Glossy Reflections", Float) = 1.0
-    	[ToggleOff] _SoftBody("Soft Body", float) = 0.0
+        [ToggleOff] _SoftBody("Soft Body", float) = 0.0
     }
+
     SubShader
     {
-Tags { "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" "Lightmode"="ForwardBase"} //I know this is weird but it's a workaround for the Vita
-		LOD 80
-		ZWrite On
-		Cull [_BlendingMode]
-		Blend One OneMinusSrcAlpha //because we are going to clip at the end
-       
+        // Keep AlphaTest queue & Cutout render type; no blending needed because we clip
+        Tags { "Queue"="Geometry" "IgnoreProjector"="True" "RenderType"="TransparentCutout" "LightMode"="ForwardBase" }        LOD 80
+        ZWrite On
+        Cull [_BlendingMode]
+        Blend Off
+
         Pass
         {
             CGPROGRAM
-            //Pragmas
-            #pragma vertex vert
+            // Pragmas
+            #pragma vertex   vert
             #pragma fragment frag
-            #pragma target 3.0
+            #pragma target   3.0
             #pragma multi_compile _ SHADOWS_SCREEN
             #pragma multi_compile _ SHADOWS_DEPTH
+            #pragma multi_compile_fwdbase
             #pragma multi_compile_fog
-			#pragma multi_compile __ POINT SPOT
-			#pragma multi_compile __ AMBIENT_ON
+            #pragma multi_compile __ POINT SPOT
+            #pragma multi_compile __ AMBIENT_ON
             #pragma shader_feature _PARALLAX_MAP
-			//Includes
+
+            // Includes
             #include "UnityCG.cginc"
             #include "UnityPBSLighting.cginc"
             #include "AutoLight.cginc"
             #include "LightingFastest.cginc"
 
-            // Global Properties
+            // Counts
             float _NumDirectionalLights, _NumPointSpotLights;
-            // Shader Properties
+
+            // Packed directional rows (max 4)
+            float4 _DirL0[4]; // pos/range or dir (see usage in LightAccumulation)
+            float4 _DirL1[4]; // color/intensity (a forced to 1)
+            float4 _DirL2[4]; // rotation/axis
+            float4 _DirL3[4]; // variables: x=spotAngle, y=intensity, z=type(0/1/2), w=id
+
+            // Packed point/spot rows (max 8)
+            float4 _PSL0[8];
+            float4 _PSL1[8];
+            float4 _PSL2[8];
+            float4 _PSL3[8];
+
+            // Shader properties
             float _Roughness, _Metalness, _Cutoff, _ParallaxStrength, _NormalHeight, _SpecularHighlights, _GlossyReflections, _SoftBody;
             sampler2D _MainTex, _NormalMap, _MOARMap, _cookieTexture, _ParallaxMap;
 
-
-            
-            // Coordinate variables for textures
-            float4 _NormalMap_ST;
+            // STs
             float4 _MainTex_ST;
- 
-            // Struct for Vertex Input
+            float4 _NormalMap_ST;
+            float4 _MOARMap_ST;
+            float4 _ParallaxMap_ST;
+
             struct appdata
             {
-                float4 vertex : POSITION;
-                float3 normal : NORMAL;
+                float4 vertex  : POSITION;
+                float3 normal  : NORMAL;
                 float4 tangent : TANGENT;
-                float4 color : COLOR;
-                float2 uv: TEXCOORD0;
-            	#if defined(_PARALLAX_MAP)
-					float3 tangentViewDir : TEXCOORD1;
-				#endif
+                float4 color   : COLOR;
+                float2 uv      : TEXCOORD0;
             };
-            // Struct for Vertex Output
+
             struct v2f
             {
-                float4 vertex : POSITION;
-                float4 color : COLOR;
+                float4 vertex   : SV_POSITION;
+                float4 color    : COLOR0;
                 float3 worldPos : TEXCOORD0;
-                float3 normal : TEXCOORD1;
-                float4 tangent : TEXCOORD2;
-                float2 uv: TEXCOORD3;
+                float3 normalWS : TEXCOORD1;
+                float4 tangentWS: TEXCOORD2;
+                float2 uv       : TEXCOORD3;
                 SHADOW_COORDS(4)
                 #if defined(SHADOWS_SCREEN)
-		            float4 shadowCoordinates : TEXCOORD5;
-	            #endif
-					float3 tangentViewDir : TEXCOORD6;
-			
+                    float4 shadowCoordinates : TEXCOORD5;
+                #endif
+                float3 tangentViewDir : TEXCOORD6;
             };
-            
-            // Global Directional Lights Buffer
-                float4x4 _DirectionalLightsBuffer[4];
-            // Global Point/Spot Lights Buffer
-                float4x4 _PointSpotLightsBuffer[8];
-            
-            // Vertex Shader
+
+            // Vertex
             v2f vert(appdata v)
             {
                 v2f o;
-                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-                o.normal = mul(v.normal, unity_WorldToObject);
-                o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
-            	if (_SoftBody)
-            	{
-            		float3 wind = float3(0.33,0.11515,0.66); //This will be replaced with a float4 passed from the CPU from the local wind zone
-            		o.vertex = UnityObjectToClipPos(WindVertexDeformation(v.vertex, normalize(o.worldPos), 5.0,0.01,0.005, wind, 0.75, _Time));
-            	}
-            	else o.vertex = UnityObjectToClipPos(v.vertex);
-                o.color = v.color;
-                o.uv = v.uv;
-            	
-					float3x3 objectToTangent = float3x3(
-						v.tangent.xyz,
-						cross(v.normal, v.tangent.xyz) * v.tangent.w,
-						v.normal
-					);
-					o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
-            	
-            	TRANSFER_VERTEX_TO_FRAGMENT(o);
+
+                float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                float3 nWS = UnityObjectToWorldNormal(v.normal);
+                float3 tWS = UnityObjectToWorldDir(v.tangent.xyz);
+                float  tW  = v.tangent.w;
+
+                if (_SoftBody)
+                {
+                    // NOTE: WindVertexDeformation is defined in LightingCalculations.cginc
+                    float3 wind = float3(0.33, 0.11515, 0.66);
+                    float4 deformed = WindVertexDeformation(v.vertex, normalize(worldPos), 5.0, 0.01, 0.005, wind, 0.75, _Time);
+                    o.vertex = UnityObjectToClipPos(deformed);
+                    worldPos = mul(unity_ObjectToWorld, deformed).xyz;
+                }
+                else
+                {
+                    o.vertex = UnityObjectToClipPos(v.vertex);
+                }
+
+                o.worldPos  = worldPos;
+                o.normalWS  = nWS;
+                o.tangentWS = float4(tWS, tW);
+                o.color     = v.color;
+                o.uv        = v.uv;
+
+                // Build tangent-space view dir for optional parallax
+                float3 bWS = normalize(cross(nWS, tWS) * (tW * unity_WorldTransformParams.w));
+                float3 viewDirWS = _WorldSpaceCameraPos - worldPos;
+                float3x3 worldToTangent = float3x3(
+                    tWS,
+                    bWS,
+                    nWS
+                );
+                o.tangentViewDir = mul(worldToTangent, viewDirWS);
+
+                TRANSFER_VERTEX_TO_FRAGMENT(o);
                 TRANSFER_SHADOW(o);
                 return o;
             }
-            
-            // Fragment Shader
-            half4 frag(v2f i) : COLOR
+
+            // Fragment
+            half4 frag(v2f i) : SV_Target
             {
                 UNITY_LIGHT_ATTENUATION(attenuation, i, i.worldPos);
-                // Initialize accumulated color
-                float4 accumColor = float4(0,0,0,1);
-                float4 grabColor;
-                // Prevents multing by zero on nonmetals
-                _Metalness += 0.001;
-            	//apply parallax offsets
-				
-					i.tangentViewDir = normalize(i.tangentViewDir);
-            		i.tangentViewDir.xy /= (i.tangentViewDir.z + 0.42);
-            		float height = tex2D(_ParallaxMap, i.uv.xy).r;
-					i.uv.xy += i.tangentViewDir.xy * (_ParallaxStrength * height);
-                // Sample the albedo, MOAR, and normal maps with built-in tiling and offset values
-                float4 MOAR = tex2D(_MOARMap, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
-                float4 albedo = tex2D(_MainTex, i.uv * _MainTex_ST.xy + _MainTex_ST.zw);
-                float3 normalMap = ExtractNormal(tex2D(_NormalMap, i.uv * _NormalMap_ST.xy + _NormalMap_ST.zw), _NormalHeight);
-                
-                // Compute normal mapping
-                float3 binormal = cross(i.normal, i.tangent.xyz) * (i.tangent.w * unity_WorldTransformParams.w);
-                float3 normal = normalize(
-		                        normalMap.x * i.tangent +
-		                        normalMap.y * binormal +
-		                        normalMap.z * i.normal);
-                //Get direction of ray from the camera towards the object surface
-                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);                
-               
-                
-                // Per vertex terms- replace i.normal with normal to make these per fragment
-                // Schlick
-                float3 grazingAngle = max (0,pow(1 - dot(i.normal, viewDir), 0.35));
-                // Reflection
-                half3 reflection = reflect(-viewDir, UnityObjectToWorldNormal(i.normal));
-                // Add a tiny value to albedo to eliminate absolute blacks
-                albedo.rgb += 0.1f;
+
+                // Start with base UV (apply optional parallax before sampling alpha)
+                float2 uvMain = i.uv * _MainTex_ST.xy + _MainTex_ST.zw;
+                float2 uvMOAR = i.uv * _MOARMap_ST.xy + _MOARMap_ST.zw;
+                float2 uvNrm  = i.uv * _NormalMap_ST.xy + _NormalMap_ST.zw;
+
+                #if defined(_PARALLAX_MAP)
+                    // Tangent-space parallax offset (matching your previous logic)
+                    float3 tv = normalize(i.tangentViewDir);
+                    tv.xy /= (tv.z + 0.42);
+                    float  height = tex2D(_ParallaxMap, i.uv * _ParallaxMap_ST.xy + _ParallaxMap_ST.zw).r;
+                    float2 parallaxOffset = tv.xy * (_ParallaxStrength * height);
+                    uvMain += parallaxOffset;
+                    uvMOAR += parallaxOffset;
+                    uvNrm  += parallaxOffset;
+                #endif
+
+                // Early alpha clip to skip heavy work
+                float4 MOARearly = tex2D(_MOARMap, uvMOAR);
+                clip(MOARearly.b - _Cutoff);
+
+                // Sample albedo and normal after clip
+                float4 albedo = tex2D(_MainTex, uvMain);
+                float3 nTex   = ExtractNormal(tex2D(_NormalMap, uvNrm), _NormalHeight);
+
+                // Build TBN and final normal
+                float3 tWS = i.tangentWS.xyz;
+                float3 bWS = normalize(cross(i.normalWS, tWS) * (i.tangentWS.w * unity_WorldTransformParams.w));
+                float3 nWS = normalize(
+                    nTex.x * tWS +
+                    nTex.y * bWS +
+                    nTex.z * i.normalWS
+                );
+
+                float3 sh = ShadeSH9(float4(nWS, 1.0));
+                float3 ambient = UNITY_LIGHTMODEL_AMBIENT.rgb + sh;
+
+                // View, reflection, grazing
+                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+                float3 reflection = reflect(-viewDir, nWS);
+                albedo.rgb += 0.1; // tiny bias as in your original
+                float3 grazingAngle = max(0, pow(1 - dot(i.normalWS, viewDir), 0.35));
+
+                // Unity shadows/attenuation
                 float shadow = attenuation;
-                // Loop over directional lights
+
+                // MOAR (material params)
+                float4 MOAR = MOARearly; // already sampled (r=metal, g=AO, b=alpha, a=roughness)
+                float  metal  = max(0.001, _Metalness * MOAR.r);
+                float  rough  = _Roughness * MOAR.a;
+
+                // Accumulator
+                float4 accumColor = float4(0,0,0,1);
+
+                // ---- Directional lights (max 4), masked by count ----
+                [unroll]
                 for (int j = 0; j < 4; ++j)
                 {
-                    // Extract LightData using array indices from the global buffer
-                    float4 position = _DirectionalLightsBuffer[j][0].xyzw;
-                    float4 color = _DirectionalLightsBuffer[j][1].xyzw;
-                    float4 rotation = _DirectionalLightsBuffer[j][2].xyzw;
-                    color.w = 1;
-                    float4 variables = _DirectionalLightsBuffer[j][3].xyzw;
+                    float active = step(j, _NumDirectionalLights - 1);
+
+                    float4 position = _DirL0[j]; // note: for dir lights you can store dir here or in rotation
+                    float4 color    = _DirL1[j]; color.w = 1;
+                    float4 rotation = _DirL2[j];
+                    float4 vars     = _DirL3[j]; // x=spotAngle, y=intensity, z=type(0 dir), w=id
+
                     float3 specColor = color.rgb;
-                   
-                    // Add directional light contribution
-                    grabColor = LightAccumulation(
-                            i.normal, normal, viewDir, albedo, MOAR,
-                            specColor, _Roughness, _Metalness,
-                            i.worldPos, position, color.xyz,
-                            position.w, variables.y,
-                            variables.z, variables.x, grazingAngle,
-                            reflection, _Cutoff, shadow, _cookieTexture, _SpecularHighlights, _GlossyReflections
-                        );
-                       accumColor += grabColor;
+
+                    float4 grab = LightAccumulation(
+                        i.normalWS, nWS, viewDir, albedo, MOAR,
+                        specColor, rough, metal,
+                        i.worldPos, position, color.xyz,
+                        position.w, vars.y,
+                        vars.z, vars.x, grazingAngle,
+                        reflection, _Cutoff, shadow, _cookieTexture, _SpecularHighlights, _GlossyReflections
+                    );
+
+                    accumColor += grab * active;
                 }
-                // Loop over point/spot lights
+
+                // ---- Point/Spot lights (max 8), masked by count ----
+                [unroll]
                 for (int k = 0; k < 8; ++k)
                 {
-                    // Extract LightData using array indices from the global buffer
-                    float4 position = _PointSpotLightsBuffer[k][0];
-                    float4 color = _PointSpotLightsBuffer[k][1];
-                    float4 rotation = _PointSpotLightsBuffer[k][2];
-                    color.w = 1;
-                    float4 variables = _PointSpotLightsBuffer[k][3];
+                    float active = step(k, _NumPointSpotLights - 1);
+
+                    float4 position = _PSL0[k];
+                    float4 color    = _PSL1[k]; color.w = 1;
+                    float4 rotation = _PSL2[k];
+                    float4 vars     = _PSL3[k]; // z=type(1 point, 2 spot)
+
                     float3 specColor = color.rgb;
-                    
-                    // Add point/spot light contribution
-                    grabColor = LightAccumulation(
-                            i.normal, normal, viewDir, albedo, MOAR,
-                            specColor, _Roughness, _Metalness,
-                            i.worldPos, position, color.xyz,
-                            position.w, variables.y,
-                            variables.z, variables.x, grazingAngle,
-                            reflection, _Cutoff, shadow, _cookieTexture, _SpecularHighlights, _GlossyReflections
-                        );
-                    accumColor += grabColor;
+
+                    float4 grab = LightAccumulation(
+                        i.normalWS, nWS, viewDir, albedo, MOAR,
+                        specColor, rough, metal,
+                        i.worldPos, position, color.xyz,
+                        position.w, vars.y,
+                        vars.z, vars.x, grazingAngle,
+                        reflection, _Cutoff, shadow, _cookieTexture, _SpecularHighlights, _GlossyReflections
+                    );
+
+                    accumColor += grab * active;
                 }
-                // Assign the final color to the fragment
+                accumColor + ambient;
+
                 return accumColor;
             }
             ENDCG
         }
-//		Pass{
-//            Tags {"LightMode"="ShadowCaster"}
-//
-//            CGPROGRAM
-//            #pragma vertex vert
-//            #pragma fragment frag
-//			#pragma target 3.0
-//               #pragma multi_compile_fog
-//			// Compile specialized variants for when positional (point/spot) and spot lights are present
-//			#pragma multi_compile __ POINT SPOT
-//			#pragma multi_compile __ AMBIENT_ON
-//			#pragma multi_compile_fog
-//			#pragma multi_compile _ LOD_FADE_CROSSFADE
-//            #include "UnityCG.cginc"
-//			#include "UnityPBSLighting.cginc" // TBD: remove
-//			
-//			struct v2f {
-//				//V2F_SHADOW_CASTER;
-//				float4 vertex : POSITION;
-//				float3 normal : NORMAL;
-//				float2 uv : TEXCOORD0;
-//            	float4 tangent : TANGENT;
-//				float3 tangentViewDir : TEXCOORD1;
-//            	UNITY_VERTEX_OUTPUT_STEREO
-//            };
-//			struct appdata {
-//				float4 vertex : POSITION;
-//				float3 normal : NORMAL;
-//				float2 uv : TEXCOORD0;
-//				float4 tangent : TEXCOORD2;
-//				float3 tangentViewDir : TEXCOORD1;
-//			};
-//			uniform half4 _MainTex_ST;
-//            float _ParallaxStrength;
-//            sampler2D _ParallaxMap;
-//	
-//			v2f vert( appdata v )
-//			{
-//				v2f o;
-//				UNITY_SETUP_INSTANCE_ID(v);
-//				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-//				o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-//				o.vertex = UnityClipSpaceShadowCasterPos(v.vertex.xyz, v.normal);
-//				o.tangent = float4(UnityObjectToWorldDir(v.tangent.xyz), v.tangent.w);
-//				float3x3 objectToTangent = float3x3(
-//						v.tangent.xyz,
-//						cross(v.normal, v.tangent.xyz) * v.tangent.w,
-//						v.normal
-//					);
-//				o.tangentViewDir = mul(objectToTangent, ObjSpaceViewDir(v.vertex));
-//				o.normal = 0;
-//				return o;
-//			}
-//            
-//            sampler2D _MOARMap;
-//			float _Cutoff;
-//
-//            float GetAlpha (v2f i) {
-//				float alpha = tex2D(_MOARMap, i.uv.xy).b;
-//				return alpha;
-//			}
-//			half4 frag( v2f i ) : COLOR
-//			{
-//				//apply parallax offsets
-//				i.tangentViewDir = normalize(i.tangentViewDir);
-//            	i.tangentViewDir.xy /= (i.tangentViewDir.z + 0.42);
-//            	float height = tex2D(_ParallaxMap, i.uv.xy).r;
-//				i.uv += i.tangentViewDir.xy * (_ParallaxStrength * height);
-//				SHADOW_CASTER_FRAGMENT(i.uv);
-//			}
-//            ENDCG
-//        }
+
+        // (Optional ShadowCaster pass was commented out in your original; leaving it out to preserve behavior)
     }
+
     FallBack "Diffuse"
 }

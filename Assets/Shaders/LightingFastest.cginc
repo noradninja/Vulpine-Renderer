@@ -20,7 +20,7 @@ float4 LightAccumulation(float3 vertNormal, float3 normal, float3 viewDir, float
     {
         lightDir = normalize(lightPosition);
     }
-    else if (lightType == 3.0) // point light
+    else if (lightType == 1.0) // point light
     {
         float3 vertexToLightSource = lightPosition - worldPosition;
         float lightDst = dot(vertexToLightSource, vertexToLightSource);

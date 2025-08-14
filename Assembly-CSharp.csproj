@@ -59,25 +59,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\CameraResolutionScaler.cs" />
+    <Compile Include="Assets\Scripts\FrameCounter.cs" />
     <Compile Include="Assets\Scripts\FXAA.cs" />
     <Compile Include="Assets\Scripts\Libraries\Lib.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\EventBroadcaster.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\LightManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\LightVisibility.cs" />
     <Compile Include="Assets\Scripts\Managers\Rendering\ShaderController.cs" />
+    <Compile Include="Assets\Scripts\RenderFrameTracker.cs" />
     <Compile Include="Assets\Scripts\RotateObject.cs" />
     <Compile Include="Assets\Scripts\SAI2x.cs" />
     <Compile Include="Assets\Scripts\ShadowCaster.cs" />
+    <Compile Include="Assets\Scripts\VulpineRendererOrchestrator.cs" />
+    <None Include="Assets\Shaders\Kelmann_BRDF.shader" />
     <None Include="Assets\LightingFastest.cginc" />
     <None Include="Assets\Shaders\LightingCalculations.cginc" />
     <None Include="Assets\Shaders\LightingFastest.cginc" />
+    <None Include="Assets\Shaders\DepthOnly.shader" />
+    <None Include="Assets\Shaders\Test.shader" />
     <None Include="Assets\Shaders\Lit.shader" />
     <None Include="Assets\Shaders\GlassStainedBumpDistort_Orthographic.shader" />
     <None Include="Assets\Shaders\ShadowCalculations.cginc" />
+    <None Include="Assets\Shaders\Custom_Deferred\FinalPass.shader" />
     <None Include="Assets\Shaders\SSS_Fast.shader" />
     <None Include="Assets\Shaders\Vulpine.shader" />
     <None Include="Assets\Shaders\EAAA.shader" />
     <None Include="Assets\Shaders\Internal_Vulpine_PrepassLight.shader" />
+    <None Include="Assets\Shaders\NewUnlitShader.shader" />
     <None Include="Assets\ReadMe.txt" />
     <None Include="Assets\Shaders\2xSAI.shader" />
     <None Include="Assets\Shaders\FXAA.shader" />
